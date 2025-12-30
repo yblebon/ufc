@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🔥 Dynamic Multi-Match Agenda 🔥</title>
     <style>
-        /* General & Modern UI Styling (Same as previous version) */
+        /* General & Modern UI Styling */
         body {
             font-family: 'Inter', sans-serif;
             background: linear-gradient(135deg, #1e1e1e 0%, #0d0d0d 100%);
@@ -33,13 +33,13 @@
             background-color: #2c2c2c;
             border-radius: 8px;
             display: inline-block;
-            text-align: left; /* Align children for better readability */
+            text-align: left;
         }
         .match-agenda label {
             font-size: 1.1em;
             margin-right: 15px;
             color: #a0a0a0;
-            display: block; /* Force label to its own line */
+            display: block;
             margin-bottom: 5px;
         }
         .match-agenda select {
@@ -50,7 +50,7 @@
             color: #e0e0e0;
             font-size: 1em;
             cursor: pointer;
-            width: 300px; /* Wider selector for match title */
+            width: 300px;
             transition: border-color 0.3s;
         }
         .match-agenda select:focus {
@@ -58,7 +58,7 @@
             border-color: #ff9800;
         }
 
-        /* Fighter Card Styles (Unchanged for compactness) */
+        /* Fighter Card Styles */
         .fighters-container {
             display: flex;
             justify-content: center;
@@ -123,28 +123,13 @@
             font-size: 0.9em;
             border-bottom: 1px dotted #2c2c2c;
         }
-        .stat-label {
-            color: #a0a0a0;
-        }
-        .stat-value {
-            font-weight: bold;
-            color: #ffffff;
-        }
+        .stat-label { color: #a0a0a0; }
+        .stat-value { font-weight: bold; color: #ffffff; }
 
-        /* Responsive Design */
         @media (max-width: 992px) {
-            .fighters-container {
-                flex-direction: column;
-                align-items: center;
-                gap: 20px;
-            }
-            .fighter-card {
-                width: 90%;
-                min-width: unset;
-            }
-            .match-agenda select {
-                width: 90%; /* Adjust selector width on mobile */
-            }
+            .fighters-container { flex-direction: column; align-items: center; gap: 20px; }
+            .fighter-card { width: 90%; min-width: unset; }
+            .match-agenda select { width: 90%; }
         }
     </style>
 </head>
@@ -152,50 +137,42 @@
     <div class="container">
         <header class="match-header">
             <h1>Championship Fight Night</h1>
-            
             <div class="match-agenda">
                 <label for="match-select">Select Match:</label>
                 <select id="match-select" onchange="loadMatchData(this.value)">
-                    </select>
+                    <option>Loading matches...</option>
+                </select>
                 <p id="match-venue" style="font-size:0.9em; color:#00bcd4; margin-top: 10px;"></p>
             </div>
         </header>
 
         <main class="fighters-container">
             <div class="fighter-card fighter-1">
-                <div class="fighter-icon">
-                    <img id="f1-icon" src="https://via.placeholder.com/100/CCCCCC/666666?text=F1" alt="Fighter 1 Icon">
-                </div>
-                <h2 class="fighter-name" id="f1-name">Select a Match</h2>
-                <div class="fighter-wikipedia">
-                    <a id="f1-wiki" href="#" target="_blank">View Wikipedia Profile &rarr;</a>
-                </div>
+                <div class="fighter-icon"><img id="f1-icon" src="" alt="F1"></div>
+                <h2 class="fighter-name" id="f1-name">Loading...</h2>
+                <div class="fighter-wikipedia"><a id="f1-wiki" href="#" target="_blank">View Wikipedia Profile &rarr;</a></div>
                 <div class="fighter-stats">
                     <ul>
-                        <li><span class="stat-label">Record</span><span class="stat-value" id="f1-record">N/A</span></li>
-                        <li><span class="stat-label">Height</span><span class="stat-value" id="f1-height">N/A</span></li>
-                        <li><span class="stat-label">Weight</span><span class="stat-value" id="f1-weight">N/A</span></li>
-                        <li><span class="stat-label">Reach</span><span class="stat-value" id="f1-reach">N/A</span></li>
-                        <li><span class="stat-label">Stance</span><span class="stat-value" id="f1-stance">N/A</span></li>
+                        <li><span class="stat-label">Record</span><span class="stat-value" id="f1-record">-</span></li>
+                        <li><span class="stat-label">Height</span><span class="stat-value" id="f1-height">-</span></li>
+                        <li><span class="stat-label">Weight</span><span class="stat-value" id="f1-weight">-</span></li>
+                        <li><span class="stat-label">Reach</span><span class="stat-value" id="f1-reach">-</span></li>
+                        <li><span class="stat-label">Stance</span><span class="stat-value" id="f1-stance">-</span></li>
                     </ul>
                 </div>
             </div>
 
             <div class="fighter-card fighter-2">
-                <div class="fighter-icon">
-                    <img id="f2-icon" src="https://via.placeholder.com/100/CCCCCC/666666?text=F2" alt="Fighter 2 Icon">
-                </div>
-                <h2 class="fighter-name" id="f2-name">Select a Match</h2>
-                <div class="fighter-wikipedia">
-                    <a id="f2-wiki" href="#" target="_blank">View Wikipedia Profile &rarr;</a>
-                </div>
+                <div class="fighter-icon"><img id="f2-icon" src="" alt="F2"></div>
+                <h2 class="fighter-name" id="f2-name">Loading...</h2>
+                <div class="fighter-wikipedia"><a id="f2-wiki" href="#" target="_blank">View Wikipedia Profile &rarr;</a></div>
                 <div class="fighter-stats">
                     <ul>
-                        <li><span class="stat-label">Record</span><span class="stat-value" id="f2-record">N/A</span></li>
-                        <li><span class="stat-label">Height</span><span class="stat-value" id="f2-height">N/A</span></li>
-                        <li><span class="stat-label">Weight</span><span class="stat-value" id="f2-weight">N/A</span></li>
-                        <li><span class="stat-label">Reach</span><span class="stat-value" id="f2-reach">N/A</span></li>
-                        <li><span class="stat-label">Stance</span><span class="stat-value" id="f2-stance">N/A</span></li>
+                        <li><span class="stat-label">Record</span><span class="stat-value" id="f2-record">-</span></li>
+                        <li><span class="stat-label">Height</span><span class="stat-value" id="f2-height">-</span></li>
+                        <li><span class="stat-label">Weight</span><span class="stat-value" id="f2-weight">-</span></li>
+                        <li><span class="stat-label">Reach</span><span class="stat-value" id="f2-reach">-</span></li>
+                        <li><span class="stat-label">Stance</span><span class="stat-value" id="f2-stance">-</span></li>
                     </ul>
                 </div>
             </div>
@@ -203,68 +180,29 @@
     </div>
 
     <script>
-        // 1. REVISED JSON Data Structure: Key is Date, Value is an ARRAY of matches
-        const MATCHES_DATA_AGENDA = {
-            "2025-12-31": [
-                {
-                    match_title: "Heavyweight Championship: Power vs. Fury",
-                    date_location: "Saturday, December 31, 2025 | T-Mobile Arena",
-                    fighter1: {
-                        name: 'Max "CRUSHER" Power',
-                        icon: 'https://via.placeholder.com/100/00bcd4/ffffff?text=MP',
-                        wiki: 'https://en.wikipedia.org/wiki/Boxing',
-                        stats: { record: '35-2-0 (28 KO)', height: '195 cm (6\'5")', weight: '110 kg (242 lbs)', reach: '208 cm (82 in)', stance: 'Orthodox' }
-                    },
-                    fighter2: {
-                        name: 'Jake "PHANTOM" Fury',
-                        icon: 'https://via.placeholder.com/100/ff9800/ffffff?text=JF',
-                        wiki: 'https://en.wikipedia.org/wiki/Mixed_martial_arts',
-                        stats: { record: '29-0-0 (15 KO)', height: '188 cm (6\'2")', weight: '105 kg (231 lbs)', reach: '198 cm (78 in)', stance: 'Southpaw' }
-                    }
-                },
-                {
-                    match_title: "Women's Flyweight Bout: Lee vs. Vargas",
-                    date_location: "Saturday, December 31, 2025 | T-Mobile Arena",
-                    fighter1: {
-                        name: 'Anna "STORM" Lee',
-                        icon: 'https://via.placeholder.com/100/FFC0CB/000000?text=AL',
-                        wiki: '#',
-                        stats: { record: '18-1-0 (8 KO)', height: '165 cm (5\'5")', weight: '57 kg (125 lbs)', reach: '170 cm (67 in)', stance: 'Southpaw' }
-                    },
-                    fighter2: {
-                        name: 'Sofia "VIPER" Vargas',
-                        icon: 'https://via.placeholder.com/100/800080/FFFFFF?text=SV',
-                        wiki: '#',
-                        stats: { record: '25-4-0 (12 KO)', height: '163 cm (5\'4")', weight: '56 kg (123 lbs)', reach: '168 cm (66 in)', stance: 'Orthodox' }
-                    }
-                }
-            ],
-            "2026-03-15": [
-                {
-                    match_title: "Main Event: Dragon vs. Stone",
-                    date_location: "Sunday, March 15, 2026 | Tokyo Dome",
-                    fighter1: {
-                        name: 'Ryu "DRAGON" Chen',
-                        icon: 'https://via.placeholder.com/100/FF5733/FFFFFF?text=RC',
-                        wiki: 'https://en.wikipedia.org/wiki/Karate',
-                        stats: { record: '45-5-0 (18 Sub)', height: '175 cm (5\'9")', weight: '75 kg (165 lbs)', reach: '180 cm (71 in)', stance: 'Southpaw' }
-                    },
-                    fighter2: {
-                        name: 'Sam "STONE" Jones',
-                        icon: 'https://via.placeholder.com/100/4CAF50/FFFFFF?text=SJ',
-                        wiki: 'https://en.wikipedia.org/wiki/Wrestling',
-                        stats: { record: '22-1-0 (10 KO)', height: '180 cm (5\'11")', weight: '77 kg (170 lbs)', reach: '183 cm (72 in)', stance: 'Orthodox' }
-                    }
-                }
-            ]
-        };
+        // Data source URL
+        const DATA_URL = "https://raw.githubusercontent.com/yblebon/datasources/refs/heads/main/fights.json";
+        
+        // Global variable to hold fetched data
+        let MATCHES_DATA_AGENDA = {};
 
-        // Helper function to update a single fighter's details (unchanged)
+        // 1. Fetch data from GitHub
+        async function init() {
+            try {
+                const response = await fetch(DATA_URL);
+                if (!response.ok) throw new Error('Network response was not ok');
+                MATCHES_DATA_AGENDA = await response.json();
+                populateMatchSelector();
+            } catch (error) {
+                console.error("Failed to load match data:", error);
+                document.getElementById('match-select').innerHTML = '<option>Error loading data</option>';
+            }
+        }
+
         function updateFighter(fighterKey, data) {
             document.getElementById(`${fighterKey}-icon`).src = data.icon;
             document.getElementById(`${fighterKey}-name`).textContent = data.name;
             document.getElementById(`${fighterKey}-wiki`).href = data.wiki;
-            
             document.getElementById(`${fighterKey}-record`).textContent = data.stats.record;
             document.getElementById(`${fighterKey}-height`).textContent = data.stats.height;
             document.getElementById(`${fighterKey}-weight`).textContent = data.stats.weight;
@@ -272,55 +210,35 @@
             document.getElementById(`${fighterKey}-stance`).textContent = data.stats.stance;
         }
 
-        // Main function to load and display match data
         function loadMatchData(combinedKey) {
-            // combinedKey format is "dateKey|matchIndex"
             const [dateKey, matchIndexStr] = combinedKey.split('|');
             const matchIndex = parseInt(matchIndexStr);
-
             const matchAgenda = MATCHES_DATA_AGENDA[dateKey];
 
-            if (!matchAgenda || matchIndex === -1) {
-                // Handle case where nothing is selected or data is missing
-                return; 
-            }
+            if (!matchAgenda || isNaN(matchIndex)) return;
 
             const match = matchAgenda[matchIndex];
-            
-            // 1. Update Venue/Date Display
             document.getElementById('match-venue').textContent = match.date_location;
-
-            // 2. Update Fighter 1 Card
             updateFighter('f1', match.fighter1);
-
-            // 3. Update Fighter 2 Card
             updateFighter('f2', match.fighter2);
         }
 
-        // Function to populate the dropdown menu on page load
         function populateMatchSelector() {
             const selectElement = document.getElementById('match-select');
-            
-            // Clear existing options
             selectElement.innerHTML = ''; 
 
             let isFirstOption = true;
             let firstKey = '';
 
-            // Iterate over the main date keys
             for (const dateKey in MATCHES_DATA_AGENDA) {
                 const matches = MATCHES_DATA_AGENDA[dateKey];
-                
-                // Add an OptGroup for the date/venue
                 const optgroup = document.createElement('optgroup');
-                optgroup.label = matches[0].date_location.split(' | ')[0]; // Use just the date for the group label
+                optgroup.label = matches[0].date_location.split(' | ')[0];
                 
-                // Iterate over the array of matches for that date
                 matches.forEach((match, index) => {
                     const option = document.createElement('option');
-                    // Value is a combined key: "date|index" to find the specific match later
                     option.value = `${dateKey}|${index}`; 
-                    option.textContent = match.match_title; // Display the title in the dropdown
+                    option.textContent = match.match_title;
                     optgroup.appendChild(option);
 
                     if (isFirstOption) {
@@ -328,19 +246,17 @@
                         isFirstOption = false;
                     }
                 });
-                
                 selectElement.appendChild(optgroup);
             }
 
-            // Load the first match data by default
             if (firstKey) {
                 selectElement.value = firstKey;
                 loadMatchData(firstKey);
             }
         }
 
-        // Run the population function when the page loads
-        document.addEventListener('DOMContentLoaded', populateMatchSelector);
+        // Start the application
+        document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
 </html>
