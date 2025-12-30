@@ -37,7 +37,6 @@
         }
         .match-agenda label {
             font-size: 1.1em;
-            margin-right: 15px;
             color: #a0a0a0;
             display: block;
             margin-bottom: 5px;
@@ -51,11 +50,6 @@
             font-size: 1em;
             cursor: pointer;
             width: 300px;
-            transition: border-color 0.3s;
-        }
-        .match-agenda select:focus {
-            outline: none;
-            border-color: #ff9800;
         }
 
         /* Fighter Card Styles */
@@ -73,22 +67,17 @@
             width: 40%;
             min-width: 380px;
             box-shadow: 0 8px 15px rgba(0, 0, 0, 0.4);
-            transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
         }
         .fighter-card::before {
             content: '';
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 5px;
+            top: 0; left: 0; width: 100%; height: 5px;
             background: linear-gradient(90deg, #00bcd4, #ff9800);
         }
         .fighter-icon img {
-            width: 100px;
-            height: 100px;
+            width: 100px; height: 100px;
             border-radius: 50%;
             object-fit: cover;
             border: 3px solid #ff9800;
@@ -96,10 +85,8 @@
         }
         .fighter-name {
             font-size: 1.5em;
-            margin: 5px 0;
             color: #ff9800;
             text-transform: uppercase;
-            letter-spacing: 1px;
         }
         .fighter-wikipedia a {
             color: #00bcd4;
@@ -107,9 +94,10 @@
             font-size: 0.9em;
             display: block;
             margin-bottom: 15px;
-            padding-bottom: 5px;
             border-bottom: 1px dashed #333;
         }
+        
+        /* Stats Styling */
         .fighter-stats ul {
             list-style: none;
             padding: 0;
@@ -119,17 +107,16 @@
         .fighter-stats li {
             display: flex;
             justify-content: space-between;
-            padding: 5px 0;
-            font-size: 0.9em;
+            padding: 8px 0;
+            font-size: 0.95em;
             border-bottom: 1px dotted #2c2c2c;
         }
-        .stat-label { color: #a0a0a0; }
+        .stat-label { color: #a0a0a0; text-transform: capitalize; }
         .stat-value { font-weight: bold; color: #ffffff; }
 
         @media (max-width: 992px) {
-            .fighters-container { flex-direction: column; align-items: center; gap: 20px; }
+            .fighters-container { flex-direction: column; align-items: center; }
             .fighter-card { width: 90%; min-width: unset; }
-            .match-agenda select { width: 90%; }
         }
     </style>
 </head>
@@ -140,84 +127,71 @@
             <div class="match-agenda">
                 <label for="match-select">Select Match:</label>
                 <select id="match-select" onchange="loadMatchData(this.value)">
-                    <option>Loading matches...</option>
+                    <option>Loading data...</option>
                 </select>
                 <p id="match-venue" style="font-size:0.9em; color:#00bcd4; margin-top: 10px;"></p>
             </div>
         </header>
 
         <main class="fighters-container">
-            <div class="fighter-card fighter-1">
-                <div class="fighter-icon"><img id="f1-icon" src="" alt="F1"></div>
-                <h2 class="fighter-name" id="f1-name">Loading...</h2>
+            <div class="fighter-card" id="card-f1">
+                <div class="fighter-icon"><img id="f1-icon" src="" alt=""></div>
+                <h2 class="fighter-name" id="f1-name"></h2>
                 <div class="fighter-wikipedia"><a id="f1-wiki" href="#" target="_blank">View Wikipedia Profile &rarr;</a></div>
                 <div class="fighter-stats">
-                    <ul>
-                        <li><span class="stat-label">Record</span><span class="stat-value" id="f1-record">-</span></li>
-                        <li><span class="stat-label">Height</span><span class="stat-value" id="f1-height">-</span></li>
-                        <li><span class="stat-label">Weight</span><span class="stat-value" id="f1-weight">-</span></li>
-                        <li><span class="stat-label">Reach</span><span class="stat-value" id="f1-reach">-</span></li>
-                        <li><span class="stat-label">Stance</span><span class="stat-value" id="f1-stance">-</span></li>
-                    </ul>
-                </div>
+                    <ul id="f1-stats-list"></ul> </div>
             </div>
 
-            <div class="fighter-card fighter-2">
-                <div class="fighter-icon"><img id="f2-icon" src="" alt="F2"></div>
-                <h2 class="fighter-name" id="f2-name">Loading...</h2>
+            <div class="fighter-card" id="card-f2">
+                <div class="fighter-icon"><img id="f2-icon" src="" alt=""></div>
+                <h2 class="fighter-name" id="f2-name"></h2>
                 <div class="fighter-wikipedia"><a id="f2-wiki" href="#" target="_blank">View Wikipedia Profile &rarr;</a></div>
                 <div class="fighter-stats">
-                    <ul>
-                        <li><span class="stat-label">Record</span><span class="stat-value" id="f2-record">-</span></li>
-                        <li><span class="stat-label">Height</span><span class="stat-value" id="f2-height">-</span></li>
-                        <li><span class="stat-label">Weight</span><span class="stat-value" id="f2-weight">-</span></li>
-                        <li><span class="stat-label">Reach</span><span class="stat-value" id="f2-reach">-</span></li>
-                        <li><span class="stat-label">Stance</span><span class="stat-value" id="f2-stance">-</span></li>
-                    </ul>
-                </div>
+                    <ul id="f2-stats-list"></ul> </div>
             </div>
         </main>
     </div>
 
     <script>
-        // Data source URL
         const DATA_URL = "https://raw.githubusercontent.com/yblebon/datasources/refs/heads/main/fights.json";
-        
-        // Global variable to hold fetched data
         let MATCHES_DATA_AGENDA = {};
 
-        // 1. Fetch data from GitHub
         async function init() {
             try {
                 const response = await fetch(DATA_URL);
-                if (!response.ok) throw new Error('Network response was not ok');
                 MATCHES_DATA_AGENDA = await response.json();
                 populateMatchSelector();
             } catch (error) {
-                console.error("Failed to load match data:", error);
-                document.getElementById('match-select').innerHTML = '<option>Error loading data</option>';
+                console.error("Fetch error:", error);
+                document.getElementById('match-select').innerHTML = '<option>Error loading source</option>';
             }
         }
 
         function updateFighter(fighterKey, data) {
+            // Update basic info
             document.getElementById(`${fighterKey}-icon`).src = data.icon;
             document.getElementById(`${fighterKey}-name`).textContent = data.name;
             document.getElementById(`${fighterKey}-wiki`).href = data.wiki;
-            document.getElementById(`${fighterKey}-record`).textContent = data.stats.record;
-            document.getElementById(`${fighterKey}-height`).textContent = data.stats.height;
-            document.getElementById(`${fighterKey}-weight`).textContent = data.stats.weight;
-            document.getElementById(`${fighterKey}-reach`).textContent = data.stats.reach;
-            document.getElementById(`${fighterKey}-stance`).textContent = data.stats.stance;
+
+            // Update stats dynamically by looping over the stats object
+            const statsList = document.getElementById(`${fighterKey}-stats-list`);
+            statsList.innerHTML = ''; // Clear previous stats
+
+            Object.entries(data.stats).forEach(([label, value]) => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <span class="stat-label">${label.replace('_', ' ')}</span>
+                    <span class="stat-value">${value}</span>
+                `;
+                statsList.appendChild(li);
+            });
         }
 
         function loadMatchData(combinedKey) {
             const [dateKey, matchIndexStr] = combinedKey.split('|');
             const matchIndex = parseInt(matchIndexStr);
-            const matchAgenda = MATCHES_DATA_AGENDA[dateKey];
+            const match = MATCHES_DATA_AGENDA[dateKey][matchIndex];
 
-            if (!matchAgenda || isNaN(matchIndex)) return;
-
-            const match = matchAgenda[matchIndex];
             document.getElementById('match-venue').textContent = match.date_location;
             updateFighter('f1', match.fighter1);
             updateFighter('f2', match.fighter2);
@@ -227,7 +201,6 @@
             const selectElement = document.getElementById('match-select');
             selectElement.innerHTML = ''; 
 
-            let isFirstOption = true;
             let firstKey = '';
 
             for (const dateKey in MATCHES_DATA_AGENDA) {
@@ -237,14 +210,11 @@
                 
                 matches.forEach((match, index) => {
                     const option = document.createElement('option');
-                    option.value = `${dateKey}|${index}`; 
+                    const val = `${dateKey}|${index}`;
+                    option.value = val; 
                     option.textContent = match.match_title;
                     optgroup.appendChild(option);
-
-                    if (isFirstOption) {
-                        firstKey = option.value;
-                        isFirstOption = false;
-                    }
+                    if (!firstKey) firstKey = val;
                 });
                 selectElement.appendChild(optgroup);
             }
@@ -255,7 +225,6 @@
             }
         }
 
-        // Start the application
         document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
