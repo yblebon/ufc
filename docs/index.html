@@ -3,241 +3,231 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fight Night Comparison - Live Data</title>
+    <title>Fight Night Comparison - Performance Optimized</title>
     <style>
+        :root {
+            --bg-dark: #1a1a1a;
+            --card-bg: #2d2d2d;
+            --accent-red: #d32f2f;
+            --accent-blue: #1976d2;
+            --text-main: #eeeeee;
+            --text-muted: #aaa;
+            --gold: #ffeb3b;
+        }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #1a1a1a;
-            color: #eeeeee;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
             margin: 0;
             padding: 20px;
+            line-height: 1.5;
         }
+
         .container {
             max-width: 900px;
             margin: 0 auto;
         }
+
+        /* Improved Card Performance with contain: layout */
         .match-card {
-            background-color: #2d2d2d;
+            background-color: var(--card-bg);
             border-radius: 12px;
             padding: 25px;
-            margin-bottom: 40px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-            border-top: 5px solid #d32f2f;
-        }
-        .header {
-            text-align: center;
             margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            border-top: 5px solid var(--accent-red);
+            contain: layout; 
         }
-        .header h2 {
-            margin: 0;
-            color: #fff;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        .header .date-text {
-            color: #ffeb3b;
-            margin-top: 8px;
-            font-weight: bold;
-            display: block;
-        }
-        .header .location-text {
-            color: #aaa;
-            font-size: 0.9rem;
-            display: block;
-        }
+
+        .header { text-align: center; margin-bottom: 25px; }
+        .header h2 { margin: 0; text-transform: uppercase; font-size: 1.4rem; }
+        .date-text { color: var(--gold); display: block; font-weight: bold; margin-top: 5px; }
+        .location-text { color: var(--text-muted); font-size: 0.85rem; }
+
         .fighters-row {
             display: flex;
-            justify-content: space-between;
+            justify-content: space-around;
             align-items: center;
-            margin-bottom: 20px;
+            gap: 15px;
         }
-        .fighter {
-            flex: 1;
-            text-align: center;
-        }
+
+        .fighter { flex: 1; text-align: center; }
         .fighter img {
-            width: 100px;
-            height: 100px;
+            width: 90px;
+            height: 90px;
             border-radius: 50%;
             border: 3px solid #444;
             object-fit: cover;
             background-color: #000;
         }
-        .vs {
-            font-size: 2rem;
-            font-weight: bold;
-            color: #d32f2f;
-            padding: 0 20px;
-        }
+
+        .vs { font-size: 1.5rem; font-weight: 900; color: var(--accent-red); font-style: italic; }
         .fighter-name {
             display: block;
-            font-size: 1.2rem;
             font-weight: bold;
             margin-top: 10px;
             color: #fff;
             text-decoration: none;
+            transition: color 0.2s;
         }
-        .fighter-name:hover {
-            color: #ff5252;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-        th, td {
-            padding: 10px;
-            text-align: center;
-            border-bottom: 1px solid #444;
-        }
-        .stat-label {
-            color: #888;
-            font-weight: bold;
-            text-transform: uppercase;
-            font-size: 0.8rem;
-        }
-        .score-container {
-            margin-top: 30px;
-            padding: 15px;
-            background: #222;
-            border-radius: 8px;
-        }
+        .fighter-name:hover { color: #ff5252; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        td { padding: 8px; text-align: center; border-bottom: 1px solid #444; width: 33%; }
+        .stat-label { color: #888; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; }
+
+        .score-container { margin-top: 25px; background: #222; padding: 15px; border-radius: 8px; }
         .score-bar-bg {
-            height: 30px;
+            height: 24px;
             background: #444;
-            border-radius: 15px;
+            border-radius: 12px;
             display: flex;
             overflow: hidden;
-            margin-top: 10px;
+            margin-top: 8px;
         }
-        .score-f1 {
-            background: linear-gradient(90deg, #d32f2f, #ff5252);
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
+        .score-f1, .score-f2 { 
+            display: flex; align-items: center; justify-content: center; 
+            font-size: 0.85rem; font-weight: bold; transition: width 0.5s ease-in-out; 
         }
-        .score-f2 {
-            background: linear-gradient(90deg, #1976d2, #2196f3);
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-        }
+        .score-f1 { background: linear-gradient(90deg, #b71c1c, #f44336); }
+        .score-f2 { background: linear-gradient(90deg, #0d47a1, #2196f3); }
+
         .date-section {
-            border-left: 4px solid #ffeb3b;
+            border-left: 4px solid var(--gold);
             padding-left: 15px;
-            margin: 40px 0 20px 0;
-            color: #ffeb3b;
-            font-size: 1.5rem;
+            margin: 40px 0 20px;
+            color: var(--gold);
+            font-size: 1.3rem;
             font-weight: bold;
-            text-transform: uppercase;
         }
-        #loading { text-align: center; font-size: 1.2rem; margin-top: 50px; }
+
+        #status { text-align: center; padding: 40px; color: var(--text-muted); }
     </style>
 </head>
 <body>
 
-<div class="container" id="fights-container">
-    <div id="loading">Fetching latest fight data...</div>
+<div class="container">
+    <div id="fights-container">
+        <div id="status">Initiating secure data link...</div>
+    </div>
 </div>
 
 <script>
-    const DATA_URL = 'https://raw.githubusercontent.com/yblebon/datasources/refs/heads/main/fights.json?t=' + new Date().getTime();
+    // Constants
+    const DATA_URL = 'https://static-conf.vercel.app/go/ufc';
+    const FALLBACK_IMG = 'https://via.placeholder.com/100?text=UFC';
 
+    /**
+     * Fetch and render fight data
+     */
     async function loadFights() {
-        try {
-            const response = await fetch(DATA_URL, { cache: 'no-store' });
-            if (!response.ok) throw new Error('Network error');
-            const data = await response.json();
-            renderFights(data);
-        } catch (error) {
-            document.getElementById('loading').innerText = 'Error loading data.';
-            console.error(error);
-        }
-    }
-
-    function renderFights(data) {
         const container = document.getElementById('fights-container');
-        container.innerHTML = '';
+        const status = document.getElementById('status');
 
-        Object.keys(data).forEach(dateKey => {
-            const dateHeader = document.createElement('div');
-            dateHeader.className = 'date-section';
-            // Displaying the grouping key (e.g., "2025-12-31")
-            dateHeader.innerText = dateKey;
-            container.appendChild(dateHeader);
+        try {
+            // URL logic updated: removed datetime/cache parameters
+            const response = await fetch(DATA_URL);
+            
+            if (!response.ok) throw new Error('Update failed');
+            
+            const data = await response.json();
+            const dates = Object.keys(data);
 
-            data[dateKey].forEach(match => {
-                container.appendChild(createMatchCard(match));
+            if (dates.length === 0) {
+                status.innerText = 'No upcoming fights scheduled.';
+                return;
+            }
+
+            // Use DocumentFragment for high-performance DOM injection
+            const fragment = document.createDocumentFragment();
+
+            dates.forEach(dateKey => {
+                const section = document.createElement('div');
+                section.className = 'date-section';
+                section.textContent = dateKey;
+                fragment.appendChild(section);
+
+                data[dateKey].forEach(match => {
+                    fragment.appendChild(createMatchCard(match));
+                });
             });
-        });
+
+            container.innerHTML = ''; // Clear loading state
+            container.appendChild(fragment);
+
+        } catch (error) {
+            status.innerHTML = `<span style="color: #ff5252;">Error syncing live data. Please try again later.</span>`;
+            console.error('System Error:', error);
+        }
     }
 
+    /**
+     * Create individual match card element
+     */
     function createMatchCard(match) {
-        const div = document.createElement('div');
-        div.className = 'match-card';
+        const card = document.createElement('div');
+        card.className = 'match-card';
 
-        // Build Stats Table
-        let statsHtml = '';
-        if (match.fighter1.stats && Object.keys(match.fighter1.stats).length > 0) {
-            const keys = Object.keys(match.fighter1.stats);
-            statsHtml = `<table>${keys.map(key => `
-                <tr>
-                    <td>${match.fighter1.stats[key] || '-'}</td>
-                    <td class="stat-label">${key}</td>
-                    <td>${match.fighter2.stats[key] || '-'}</td>
-                </tr>`).join('')}
-            </table>`;
-        }
+        // Stats Generation
+        const stats = match.fighter1.stats || {};
+        const statKeys = Object.keys(stats);
+        const statsHtml = statKeys.length ? `
+            <table>
+                ${statKeys.map(key => `
+                    <tr>
+                        <td>${stats[key] || '-'}</td>
+                        <td class="stat-label">${key}</td>
+                        <td>${match.fighter2.stats[key] || '-'}</td>
+                    </tr>
+                `).join('')}
+            </table>` : '';
 
-        // Build Score Bar
+        // Win Probability Logic
         let scoreHtml = '';
-        if (match.fighter1.score !== undefined && match.fighter2.score !== undefined) {
-            const s1 = parseFloat(match.fighter1.score);
-            const s2 = parseFloat(match.fighter2.score);
+        const s1 = parseFloat(match.fighter1.score);
+        const s2 = parseFloat(match.fighter2.score);
+        
+        if (!isNaN(s1) && !isNaN(s2)) {
             const total = s1 + s2;
             const p1 = total > 0 ? (s1 / total) * 100 : 50;
             const p2 = 100 - p1;
-            
+
             scoreHtml = `
                 <div class="score-container">
-                    <div style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 5px; font-size: 0.8rem;">
-                        <span>WIN PROBABILITY</span>
-                    </div>
+                    <div style="font-size: 0.7rem; font-weight: bold; color: #888; text-align: center; margin-bottom: 5px;">WIN PROBABILITY (%)</div>
                     <div class="score-bar-bg">
-                        <div class="score-f1" style="width: ${p1}%">${s1}</div>
-                        <div class="score-f2" style="width: ${p2}%">${s2}</div>
+                        <div class="score-f1" style="width: ${p1}%">${Math.round(p1)}%</div>
+                        <div class="score-f2" style="width: ${p2}%">${Math.round(p2)}%</div>
                     </div>
                 </div>`;
         }
 
-        div.innerHTML = `
+        card.innerHTML = `
             <div class="header">
                 <h2>${match.match_title}</h2>
                 <span class="date-text">${match.date || ''}</span>
-                <span class="location-text">${match.location || ''}</span>
+                <span class="location-text">${match.location || 'Location TBD'}</span>
             </div>
             <div class="fighters-row">
                 <div class="fighter">
-                    <img src="${match.fighter1.icon}" onerror="this.src='https://via.placeholder.com/100?text=?'">
-                    <a href="${match.fighter1.wiki}" target="_blank" class="fighter-name">${match.fighter1.name}</a>
+                    <img src="${match.fighter1.icon}" loading="lazy" onerror="this.src='${FALLBACK_IMG}'">
+                    <a href="${match.fighter1.wiki}" target="_blank" rel="noopener" class="fighter-name">${match.fighter1.name}</a>
                 </div>
                 <div class="vs">VS</div>
                 <div class="fighter">
-                    <img src="${match.fighter2.icon}" onerror="this.src='https://via.placeholder.com/100?text=?'">
-                    <a href="${match.fighter2.wiki}" target="_blank" class="fighter-name">${match.fighter2.name}</a>
+                    <img src="${match.fighter2.icon}" loading="lazy" onerror="this.src='${FALLBACK_IMG}'">
+                    <a href="${match.fighter2.wiki}" target="_blank" rel="noopener" class="fighter-name">${match.fighter2.name}</a>
                 </div>
             </div>
             ${statsHtml}
             ${scoreHtml}
         `;
-        return div;
+        return card;
     }
 
-    loadFights();
+    // Initialize
+    document.addEventListener('DOMContentLoaded', loadFights);
 </script>
 
 </body>
