@@ -293,6 +293,43 @@
         border-color: rgba(240,180,41,0.45);
         box-shadow: 0 0 0 1px rgba(240,180,41,0.15), 0 8px 28px rgba(0,0,0,0.5);
     }
+    /* Auto-focused closest match */
+    .match-card.nearest {
+        border-color: rgba(240,180,41,0.55);
+        box-shadow: 0 0 0 1px rgba(240,180,41,0.2), 0 10px 36px rgba(0,0,0,0.55);
+        animation: nearestPulse 2.8s ease-in-out 3;
+    }
+    @keyframes nearestPulse {
+        0%,100% { box-shadow: 0 0 0 1px rgba(240,180,41,0.2), 0 10px 36px rgba(0,0,0,0.55); }
+        50%      { box-shadow: 0 0 0 4px rgba(240,180,41,0.18), 0 10px 36px rgba(0,0,0,0.55); }
+    }
+    /* Nearest-match badge inside the card */
+    .nearest-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-family: var(--font-ui);
+        font-size: 0.6rem;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: #0c0c0d;
+        background: var(--gold);
+        border-radius: 4px;
+        padding: 3px 8px;
+        margin-bottom: 10px;
+    }
+    .nearest-badge-dot {
+        width: 5px; height: 5px;
+        border-radius: 50%;
+        background: rgba(0,0,0,0.4);
+        flex-shrink: 0;
+    }
+    /* Sidebar nearest indicator */
+    .fighter-row.nearest-row {
+        border-left-color: var(--gold);
+        background: rgba(240,180,41,0.06);
+    }
 
     .card-accent {
         height: 3px;
@@ -568,7 +605,8 @@ const revealObs = new IntersectionObserver(entries => {
 }, { threshold: 0.06 });
 
 /* ── App State ───────────────────────────────────────── */
-let allFighters  = [];
+let allFighters  = [];   // { name, event, side, icon, cardId }
+let allMatches   = [];   // { cardId, ts } — used to find the closest card to today
 let activeCardId = null;
 
 /* ── Sidebar rendering ────────────────────────────────── */
@@ -641,8 +679,12 @@ function scrollToCard(cardId, rowEl) {
     const card = document.getElementById(cardId);
     if (!card) return;
 
-    document.querySelectorAll('.match-card.highlighted').forEach(c => c.classList.remove('highlighted'));
-    document.querySelectorAll('.fighter-row.active').forEach(r => r.classList.remove('active'));
+    document.querySelectorAll('.match-card.highlighted, .match-card.nearest').forEach(c => {
+        c.classList.remove('highlighted', 'nearest');
+    });
+    document.querySelectorAll('.fighter-row.active, .fighter-row.nearest-row').forEach(r => {
+        r.classList.remove('active', 'nearest-row');
+    });
 
     card.classList.add('highlighted');
     if (rowEl) rowEl.classList.add('active');
@@ -794,6 +836,63 @@ function buildMatchCard(match, cardId) {
     return card;
 }
 
+/* ── Find the match card closest to today ─────────────── */
+function parseMatchDate(dateStr) {
+    if (!dateStr) return NaN;
+    // Try native parse — works for ISO, "Month DD YYYY", "DD Month YYYY", etc.
+    const ts = Date.parse(String(dateStr));
+    return isNaN(ts) ? NaN : ts;
+}
+
+function findClosestCardId() {
+    if (!allMatches.length) return null;
+    const now = Date.now();
+    let closest = null;
+    let minDiff = Infinity;
+    allMatches.forEach(({ cardId, ts }) => {
+        if (isNaN(ts)) return;
+        const diff = Math.abs(ts - now);
+        if (diff < minDiff) { minDiff = diff; closest = cardId; }
+    });
+    return closest;
+}
+
+function autoFocusClosest() {
+    const cardId = findClosestCardId();
+    if (!cardId) return;
+
+    // Mark the card visually
+    const card = document.getElementById(cardId);
+    if (!card) return;
+    card.classList.add('nearest', 'highlighted');
+    activeCardId = cardId;
+
+    // Inject the "Closest Match" badge at the top of card-inner
+    const inner = card.querySelector('.card-inner');
+    if (inner) {
+        const badge = document.createElement('div');
+        badge.className = 'nearest-badge';
+        badge.setAttribute('aria-label', 'Closest match to today');
+        const dot = document.createElement('span'); dot.className = 'nearest-badge-dot'; dot.setAttribute('aria-hidden','true');
+        badge.appendChild(dot);
+        badge.appendChild(document.createTextNode('Closest Match'));
+        inner.insertBefore(badge, inner.firstChild);
+    }
+
+    // Mark matching sidebar rows
+    document.querySelectorAll(`.fighter-row[data-card-id="${cardId}"]`).forEach(row => {
+        row.classList.add('active', 'nearest-row');
+    });
+
+    // Scroll after a short delay so reveal animations have started
+    setTimeout(() => {
+        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Also scroll the sidebar so the first matching fighter row is visible
+        const sidebarRow = document.querySelector(`.fighter-row[data-card-id="${cardId}"]`);
+        if (sidebarRow) sidebarRow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 400);
+}
+
 /* ── Error state ──────────────────────────────────────── */
 function showError(msg) {
     const container = document.getElementById('fights-container');
@@ -846,6 +945,11 @@ async function loadFights() {
                 const cardId = `card-${cardIndex++}`;
                 const eventLabel = String(match.match_title || dateKey);
 
+                // Parse the best available date string for proximity detection
+                const dateStr = match.date || dateKey;
+                const ts      = parseMatchDate(dateStr);
+                allMatches.push({ cardId, ts });
+
                 // Register both fighters for sidebar
                 allFighters.push({ name: String(match.fighter1.name || ''), event: eventLabel, side: 'red',  icon: safeImg(match.fighter1.icon), cardId });
                 allFighters.push({ name: String(match.fighter2.name || ''), event: eventLabel, side: 'blue', icon: safeImg(match.fighter2.icon), cardId });
@@ -858,6 +962,7 @@ async function loadFights() {
         container.appendChild(frag);
         updateCount(allFighters.length);
         renderSidebar('');
+        autoFocusClosest();
 
     } catch (err) {
         console.error('Fight Night error:', err);
