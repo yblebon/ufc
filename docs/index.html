@@ -3,231 +3,805 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fight Night Comparison - Performance Optimized</title>
+    <title>Fight Night — Match Centre</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+
+    <noscript>
+        <style>.js-only { display: none; }</style>
+    </noscript>
+
     <style>
+        /* ── Design Tokens ─────────────────────────────────── */
         :root {
-            --bg-dark: #1a1a1a;
-            --card-bg: #2d2d2d;
-            --accent-red: #d32f2f;
-            --accent-blue: #1976d2;
-            --text-main: #eeeeee;
-            --text-muted: #aaa;
-            --gold: #ffeb3b;
+            --bg:         #0d0d0e;
+            --surface:    #161618;
+            --surface-2:  #1e1e21;
+            --border:     rgba(255,255,255,0.07);
+            --red:        #e8001a;
+            --red-dim:    rgba(232,0,26,0.15);
+            --blue:       #006de8;
+            --blue-dim:   rgba(0,109,232,0.15);
+            --gold:       #f0b429;
+            --warn-bg:    rgba(240,163,0,0.1);
+            --warn-border:#f0a300;
+            --text:       #f0f0f0;
+            --muted:      #6b6b78;
+            --subtle:     rgba(255,255,255,0.05);
+
+            --font-display: 'Bebas Neue', sans-serif;
+            --font-ui:      'Barlow Condensed', sans-serif;
+            --font-body:    'DM Sans', sans-serif;
+
+            --radius:   10px;
+            --radius-lg:16px;
         }
 
+        /* ── Reset ──────────────────────────────────────────── */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        /* ── Base ───────────────────────────────────────────── */
         body {
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            background-color: var(--bg-dark);
-            color: var(--text-main);
-            margin: 0;
-            padding: 20px;
-            line-height: 1.5;
+            font-family: var(--font-body);
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
         }
 
-        .container {
-            max-width: 900px;
+        /* Grain overlay */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0.03;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+            background-size: 128px 128px;
+        }
+
+        /* ── Layout ─────────────────────────────────────────── */
+        .page-wrap {
+            position: relative;
+            z-index: 1;
+            max-width: 860px;
             margin: 0 auto;
+            padding: 0 20px 60px;
         }
 
-        /* Improved Card Performance with contain: layout */
-        .match-card {
-            background-color: var(--card-bg);
-            border-radius: 12px;
-            padding: 25px;
-            margin-bottom: 30px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-            border-top: 5px solid var(--accent-red);
-            contain: layout; 
-        }
-
-        .header { text-align: center; margin-bottom: 25px; }
-        .header h2 { margin: 0; text-transform: uppercase; font-size: 1.4rem; }
-        .date-text { color: var(--gold); display: block; font-weight: bold; margin-top: 5px; }
-        .location-text { color: var(--text-muted); font-size: 0.85rem; }
-
-        .fighters-row {
+        /* ── Masthead ────────────────────────────────────────── */
+        .masthead {
             display: flex;
-            justify-content: space-around;
             align-items: center;
-            gap: 15px;
+            justify-content: space-between;
+            padding: 28px 0 20px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 28px;
         }
-
-        .fighter { flex: 1; text-align: center; }
-        .fighter img {
-            width: 90px;
-            height: 90px;
+        .masthead-logo {
+            font-family: var(--font-display);
+            font-size: 2.2rem;
+            letter-spacing: 0.05em;
+            color: #fff;
+            line-height: 1;
+        }
+        .masthead-logo span {
+            color: var(--red);
+        }
+        .masthead-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-family: var(--font-ui);
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+        .live-dot {
+            width: 7px; height: 7px;
             border-radius: 50%;
-            border: 3px solid #444;
-            object-fit: cover;
-            background-color: #000;
+            background: var(--red);
+            animation: pulse 1.8s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50%       { opacity: 0.4; transform: scale(0.7); }
         }
 
-        .vs { font-size: 1.5rem; font-weight: 900; color: var(--accent-red); font-style: italic; }
-        .fighter-name {
+        /* ── Betting Warning Banner ──────────────────────────── */
+        .warning-banner {
+            display: flex;
+            gap: 14px;
+            align-items: flex-start;
+            background: var(--warn-bg);
+            border: 1px solid var(--warn-border);
+            border-radius: var(--radius);
+            padding: 14px 18px;
+            margin-bottom: 32px;
+        }
+        .warning-icon {
+            flex-shrink: 0;
+            width: 22px; height: 22px;
+            margin-top: 1px;
+        }
+        .warning-text {
+            font-family: var(--font-body);
+            font-size: 0.82rem;
+            line-height: 1.55;
+            color: #d4a017;
+        }
+        .warning-text strong {
             display: block;
-            font-weight: bold;
-            margin-top: 10px;
+            font-size: 0.9rem;
+            margin-bottom: 3px;
+            color: var(--gold);
+            letter-spacing: 0.01em;
+        }
+        .warning-text a {
+            color: var(--gold);
+            text-underline-offset: 3px;
+        }
+
+        /* ── Date Section Heading ────────────────────────────── */
+        .date-section {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin: 40px 0 18px;
+        }
+        .date-section-label {
+            font-family: var(--font-ui);
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: var(--muted);
+            white-space: nowrap;
+        }
+        .date-section-line {
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+        .date-section-date {
+            font-family: var(--font-display);
+            font-size: 1.05rem;
+            letter-spacing: 0.08em;
+            color: var(--gold);
+            white-space: nowrap;
+        }
+
+        /* ── Match Card ──────────────────────────────────────── */
+        .match-card {
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+            margin-bottom: 20px;
+            overflow: hidden;
+            contain: content;
+            opacity: 0;
+            transform: translateY(16px);
+            transition: opacity 0.45s ease, transform 0.45s ease, border-color 0.25s;
+        }
+        .match-card.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .match-card:hover {
+            border-color: rgba(255,255,255,0.14);
+        }
+
+        /* Card top accent bar */
+        .card-accent {
+            height: 3px;
+            background: linear-gradient(90deg, var(--red) 0%, var(--blue) 100%);
+        }
+
+        .card-inner { padding: 24px 26px 22px; }
+
+        /* Card Title & Meta */
+        .card-title {
+            font-family: var(--font-display);
+            font-size: 1.3rem;
+            letter-spacing: 0.06em;
+            text-align: center;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+        .card-meta {
+            text-align: center;
+            margin-bottom: 22px;
+        }
+        .card-meta-date {
+            font-family: var(--font-ui);
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--gold);
+        }
+        .card-meta-location {
+            font-family: var(--font-ui);
+            font-size: 0.75rem;
+            color: var(--muted);
+            margin-top: 2px;
+        }
+
+        /* Fighters Row */
+        .fighters-row {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 22px;
+        }
+        .fighter { text-align: center; }
+        .fighter-avatar-wrap {
+            position: relative;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+        .fighter-avatar {
+            width: 80px; height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            display: block;
+            background: var(--surface-2);
+            border: 2px solid var(--border);
+        }
+        .fighter--red .fighter-avatar  { border-color: rgba(232,0,26,0.5); box-shadow: 0 0 14px rgba(232,0,26,0.2); }
+        .fighter--blue .fighter-avatar { border-color: rgba(0,109,232,0.5); box-shadow: 0 0 14px rgba(0,109,232,0.2); }
+
+        .fighter-name {
+            font-family: var(--font-ui);
+            font-size: 1rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
             color: #fff;
             text-decoration: none;
+            display: block;
             transition: color 0.2s;
         }
-        .fighter-name:hover { color: #ff5252; }
+        .fighter--red  .fighter-name:hover { color: var(--red); }
+        .fighter--blue .fighter-name:hover { color: var(--blue); }
+        .fighter-name:focus-visible {
+            outline: 2px solid var(--gold);
+            outline-offset: 3px;
+            border-radius: 3px;
+        }
 
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        td { padding: 8px; text-align: center; border-bottom: 1px solid #444; width: 33%; }
-        .stat-label { color: #888; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; }
+        .vs-badge {
+            font-family: var(--font-display);
+            font-size: 1.6rem;
+            letter-spacing: 0.05em;
+            color: var(--muted);
+            padding: 0 4px;
+        }
 
-        .score-container { margin-top: 25px; background: #222; padding: 15px; border-radius: 8px; }
-        .score-bar-bg {
-            height: 24px;
-            background: #444;
-            border-radius: 12px;
+        /* Stats Table */
+        .stats-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        .stats-table tr { border-bottom: 1px solid var(--border); }
+        .stats-table tr:last-child { border-bottom: none; }
+        .stats-table td {
+            padding: 8px 6px;
+            font-family: var(--font-ui);
+            font-size: 0.95rem;
+            font-weight: 600;
+            width: 33%;
+        }
+        .stats-table td:first-child { color: var(--red); text-align: left; }
+        .stats-table td:last-child  { color: var(--blue); text-align: right; }
+        .stat-label {
+            text-align: center;
+            font-size: 0.62rem;
+            font-weight: 700;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+
+        /* Win Probability */
+        .prob-section {
+            background: var(--surface-2);
+            border-radius: var(--radius);
+            padding: 14px 16px;
+        }
+        .prob-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .prob-label {
+            font-family: var(--font-ui);
+            font-size: 0.62rem;
+            font-weight: 700;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+        .prob-names {
+            display: flex;
+            justify-content: space-between;
+            font-family: var(--font-ui);
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+        .prob-names span:first-child { color: var(--red); }
+        .prob-names span:last-child  { color: var(--blue); }
+        .prob-track {
+            height: 20px;
+            background: rgba(255,255,255,0.06);
+            border-radius: 10px;
             display: flex;
             overflow: hidden;
-            margin-top: 8px;
         }
-        .score-f1, .score-f2 { 
-            display: flex; align-items: center; justify-content: center; 
-            font-size: 0.85rem; font-weight: bold; transition: width 0.5s ease-in-out; 
+        .prob-fill-red, .prob-fill-blue {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--font-ui);
+            font-size: 0.72rem;
+            font-weight: 700;
+            transition: width 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+            min-width: 32px;
         }
-        .score-f1 { background: linear-gradient(90deg, #b71c1c, #f44336); }
-        .score-f2 { background: linear-gradient(90deg, #0d47a1, #2196f3); }
+        .prob-fill-red  { background: linear-gradient(90deg, #7a0010, var(--red)); justify-content: flex-start; padding-left: 8px; }
+        .prob-fill-blue { background: linear-gradient(90deg, var(--blue), #003b7a); justify-content: flex-end; padding-right: 8px; }
 
-        .date-section {
-            border-left: 4px solid var(--gold);
-            padding-left: 15px;
-            margin: 40px 0 20px;
-            color: var(--gold);
-            font-size: 1.3rem;
-            font-weight: bold;
+        /* ── Status / Loading / Error ────────────────────────── */
+        .status-wrap {
+            text-align: center;
+            padding: 80px 20px;
+        }
+        .status-spinner {
+            width: 36px; height: 36px;
+            border: 3px solid var(--border);
+            border-top-color: var(--red);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 18px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .status-msg {
+            font-family: var(--font-ui);
+            font-size: 0.85rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+        .status-error { color: #ff4d4d; }
+
+        /* ── Fallback SVG Avatar ─────────────────────────────── */
+        .avatar-fallback {
+            display: none;
+            width: 80px; height: 80px;
+            border-radius: 50%;
+            background: var(--surface-2);
         }
 
-        #status { text-align: center; padding: 40px; color: var(--text-muted); }
+        /* ── Noscript ───────────────────────────────────────── */
+        noscript .noscript-msg {
+            text-align: center;
+            padding: 60px 20px;
+            font-family: var(--font-ui);
+            font-size: 1rem;
+            color: var(--muted);
+            letter-spacing: 0.06em;
+        }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div id="fights-container">
-        <div id="status">Initiating secure data link...</div>
+<div class="page-wrap">
+
+    <!-- Masthead -->
+    <header class="masthead">
+        <div class="masthead-logo">Fight<span>Night</span></div>
+        <div class="masthead-badge">
+            <span class="live-dot" aria-hidden="true"></span>
+            Match Centre
+        </div>
+    </header>
+
+    <!-- ⚠️ Betting Risk Warning -->
+    <div class="warning-banner" role="alert" aria-label="Gambling risk warning">
+        <svg class="warning-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M12 2L2 20h20L12 2Z" stroke="#f0a300" stroke-width="1.8" stroke-linejoin="round"/>
+            <path d="M12 9v5" stroke="#f0a300" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="12" cy="17" r="0.8" fill="#f0a300"/>
+        </svg>
+        <div class="warning-text">
+            <strong>⚠ Gambling Awareness Notice</strong>
+            Win probabilities shown here are statistical estimates only and are <em>not</em> a reliable
+            basis for betting decisions. Sports outcomes are inherently unpredictable. Gambling can be
+            addictive and cause serious financial harm. If you or someone you know has a gambling problem,
+            please seek help — visit <a href="https://www.begambleaware.org" target="_blank" rel="noopener noreferrer">BeGambleAware.org</a>
+            or call the National Gambling Helpline: <strong>0808 8020 133</strong> (UK, free, 24/7).
+            Always gamble responsibly and within your means.
+        </div>
     </div>
+
+    <!-- Main content -->
+    <main id="fights-container">
+        <div class="status-wrap" id="statusEl">
+            <div class="status-spinner" aria-hidden="true"></div>
+            <p class="status-msg">Loading match data…</p>
+        </div>
+    </main>
+
+    <noscript>
+        <p class="noscript-msg">JavaScript is required to display fight data.</p>
+    </noscript>
+
 </div>
 
 <script>
-    // Constants
-    const DATA_URL = 'https://static-conf.vercel.app/go/ufc';
-    const FALLBACK_IMG = 'https://via.placeholder.com/100?text=UFC';
+"use strict";
 
-    /**
-     * Fetch and render fight data
-     */
-    async function loadFights() {
-        const container = document.getElementById('fights-container');
-        const status = document.getElementById('status');
+/* ── Constants ─────────────────────────────────────────────── */
+const DATA_URL      = 'https://static-conf.vercel.app/go/ufc';
+const CACHE_KEY     = 'fightnight_cache';
+const CACHE_TTL_MS  = 30 * 60 * 1000; // 30 minutes
 
-        try {
-            // URL logic updated: removed datetime/cache parameters
-            const response = await fetch(DATA_URL);
-            
-            if (!response.ok) throw new Error('Update failed');
-            
-            const data = await response.json();
-            const dates = Object.keys(data);
+/* ── Inline SVG fallback (no third-party placeholder service) ── */
+const FALLBACK_SVG_URL = (() => {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80">
+        <circle cx="40" cy="40" r="40" fill="#1e1e21"/>
+        <circle cx="40" cy="30" r="13" fill="#2e2e33"/>
+        <ellipse cx="40" cy="70" rx="22" ry="16" fill="#2e2e33"/>
+    </svg>`;
+    return 'data:image/svg+xml,' + encodeURIComponent(svg);
+})();
 
-            if (dates.length === 0) {
-                status.innerText = 'No upcoming fights scheduled.';
-                return;
+/* ── URL Validator — fixes href injection ──────────────────── */
+function safeUrl(raw) {
+    try {
+        const url = new URL(String(raw));
+        if (url.protocol === 'https:' || url.protocol === 'http:') return url.href;
+    } catch (_) { /* fall through */ }
+    return null;
+}
+
+/* ── Safe DOM text setter — prevents XSS via innerHTML ─────── */
+function setText(el, value) {
+    el.textContent = String(value ?? '');
+    return el;
+}
+
+/* ── Simple sessionStorage cache ─────────────────────────────  */
+function readCache() {
+    try {
+        const raw = sessionStorage.getItem(CACHE_KEY);
+        if (!raw) return null;
+        const { ts, data } = JSON.parse(raw);
+        if (Date.now() - ts < CACHE_TTL_MS) return data;
+    } catch (_) { /* ignore */ }
+    return null;
+}
+function writeCache(data) {
+    try {
+        sessionStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data }));
+    } catch (_) { /* ignore quota errors */ }
+}
+
+/* ── API shape guard ─────────────────────────────────────────  */
+function isValidData(d) {
+    return d !== null && typeof d === 'object' && !Array.isArray(d);
+}
+function isValidMatch(m) {
+    return m && typeof m === 'object'
+        && typeof m.match_title === 'string'
+        && m.fighter1 && typeof m.fighter1 === 'object'
+        && m.fighter2 && typeof m.fighter2 === 'object';
+}
+
+/* ── Intersection Observer for card reveal ──────────────────  */
+const revealObserver = new IntersectionObserver(
+    (entries) => {
+        entries.forEach(e => {
+            if (e.isIntersecting) {
+                e.target.classList.add('visible');
+                revealObserver.unobserve(e.target);
             }
+        });
+    },
+    { threshold: 0.08 }
+);
 
-            // Use DocumentFragment for high-performance DOM injection
-            const fragment = document.createDocumentFragment();
+/* ── Build a fighter column ──────────────────────────────────  */
+function buildFighter(fData, side) {
+    const wrap = document.createElement('div');
+    wrap.className = `fighter fighter--${side}`;
 
-            dates.forEach(dateKey => {
-                const section = document.createElement('div');
-                section.className = 'date-section';
-                section.textContent = dateKey;
-                fragment.appendChild(section);
+    // Avatar
+    const avatarWrap = document.createElement('div');
+    avatarWrap.className = 'fighter-avatar-wrap';
 
-                data[dateKey].forEach(match => {
-                    fragment.appendChild(createMatchCard(match));
-                });
+    const img = document.createElement('img');
+    img.className = 'fighter-avatar';
+    img.alt = fData.name ? String(fData.name) : 'Fighter';
+    img.loading = 'lazy';
+    img.decoding = 'async';
+
+    // Safe image src — fall back to inline SVG if invalid or on error
+    const imgSrc = safeUrl(fData.icon);
+    img.src = imgSrc || FALLBACK_SVG_URL;
+    img.addEventListener('error', () => { img.src = FALLBACK_SVG_URL; }, { once: true });
+
+    avatarWrap.appendChild(img);
+    wrap.appendChild(avatarWrap);
+
+    // Name (link if wiki URL is valid https)
+    const wikiUrl = safeUrl(fData.wiki);
+    const nameEl = wikiUrl
+        ? document.createElement('a')
+        : document.createElement('span');
+
+    nameEl.className = 'fighter-name';
+    setText(nameEl, fData.name);
+
+    if (wikiUrl) {
+        nameEl.href = wikiUrl;
+        nameEl.target = '_blank';
+        nameEl.rel = 'noopener noreferrer'; // fix: includes noreferrer
+    }
+    wrap.appendChild(nameEl);
+    return wrap;
+}
+
+/* ── Build stats table ───────────────────────────────────────  */
+function buildStatsTable(f1, f2) {
+    const stats1 = (f1.stats && typeof f1.stats === 'object') ? f1.stats : {};
+    const stats2 = (f2.stats && typeof f2.stats === 'object') ? f2.stats : {};
+    const keys   = Object.keys(stats1);
+    if (!keys.length) return null;
+
+    const table = document.createElement('table');
+    table.className = 'stats-table';
+    table.setAttribute('role', 'table');
+    table.setAttribute('aria-label', 'Fighter statistics comparison');
+
+    keys.forEach(key => {
+        const tr = document.createElement('tr');
+
+        const tdLeft  = document.createElement('td');
+        const tdLabel = document.createElement('td');
+        const tdRight = document.createElement('td');
+        tdLabel.className = 'stat-label';
+
+        setText(tdLeft,  stats1[key] ?? '—');
+        setText(tdLabel, key);
+        setText(tdRight, stats2[key] ?? '—'); // fix: null-checked fighter2.stats
+
+        tr.appendChild(tdLeft);
+        tr.appendChild(tdLabel);
+        tr.appendChild(tdRight);
+        table.appendChild(tr);
+    });
+
+    return table;
+}
+
+/* ── Build win probability bar ───────────────────────────────  */
+function buildProbBar(match) {
+    const s1 = parseFloat(match.fighter1.score);
+    const s2 = parseFloat(match.fighter2.score);
+    if (isNaN(s1) || isNaN(s2)) return null;
+
+    const total = s1 + s2;
+    const p1 = total > 0 ? Math.round((s1 / total) * 100) : 50;
+    const p2 = 100 - p1;
+
+    const section = document.createElement('div');
+    section.className = 'prob-section';
+    section.setAttribute('aria-label', `Win probability: ${match.fighter1.name} ${p1}%, ${match.fighter2.name} ${p2}%`);
+
+    const names = document.createElement('div');
+    names.className = 'prob-names';
+    const nameLeft  = document.createElement('span');
+    const nameRight = document.createElement('span');
+    setText(nameLeft,  match.fighter1.name);
+    setText(nameRight, match.fighter2.name);
+    names.appendChild(nameLeft);
+    names.appendChild(nameRight);
+
+    const labelRow = document.createElement('div');
+    labelRow.className = 'prob-header';
+    const label = document.createElement('span');
+    label.className = 'prob-label';
+    setText(label, 'Win Probability');
+    labelRow.appendChild(label);
+
+    const track = document.createElement('div');
+    track.className = 'prob-track';
+    track.setAttribute('role', 'img');
+
+    const fillRed  = document.createElement('div');
+    const fillBlue = document.createElement('div');
+    fillRed.className  = 'prob-fill-red';
+    fillBlue.className = 'prob-fill-blue';
+
+    // Start at 0, animate in after paint
+    fillRed.style.width  = '0%';
+    fillBlue.style.width = '0%';
+    setText(fillRed,  `${p1}%`);
+    setText(fillBlue, `${p2}%`);
+
+    track.appendChild(fillRed);
+    track.appendChild(fillBlue);
+
+    section.appendChild(names);
+    section.appendChild(track);
+
+    // Animate after insertion via rAF
+    requestAnimationFrame(() => {
+        fillRed.style.width  = `${p1}%`;
+        fillBlue.style.width = `${p2}%`;
+    });
+
+    return section;
+}
+
+/* ── Build one match card ─────────────────────────────────────  */
+function buildMatchCard(match) {
+    if (!isValidMatch(match)) return null;
+
+    const card = document.createElement('article');
+    card.className = 'match-card';
+    card.setAttribute('aria-label', match.match_title);
+
+    // Top gradient accent bar
+    const accent = document.createElement('div');
+    accent.className = 'card-accent';
+    accent.setAttribute('aria-hidden', 'true');
+    card.appendChild(accent);
+
+    const inner = document.createElement('div');
+    inner.className = 'card-inner';
+
+    // Title
+    const title = document.createElement('h2');
+    title.className = 'card-title';
+    setText(title, match.match_title);
+    inner.appendChild(title);
+
+    // Meta (date + location)
+    const meta = document.createElement('div');
+    meta.className = 'card-meta';
+    const metaDate = document.createElement('div');
+    metaDate.className = 'card-meta-date';
+    setText(metaDate, match.date || '');
+    const metaLoc = document.createElement('div');
+    metaLoc.className = 'card-meta-location';
+    setText(metaLoc, match.location || 'Location TBD');
+    meta.appendChild(metaDate);
+    meta.appendChild(metaLoc);
+    inner.appendChild(meta);
+
+    // Fighters
+    const fightersRow = document.createElement('div');
+    fightersRow.className = 'fighters-row';
+    fightersRow.appendChild(buildFighter(match.fighter1, 'red'));
+
+    const vs = document.createElement('div');
+    vs.className = 'vs-badge';
+    vs.setAttribute('aria-label', 'versus');
+    setText(vs, 'VS');
+    fightersRow.appendChild(vs);
+
+    fightersRow.appendChild(buildFighter(match.fighter2, 'blue'));
+    inner.appendChild(fightersRow);
+
+    // Stats
+    const statsTable = buildStatsTable(match.fighter1, match.fighter2);
+    if (statsTable) inner.appendChild(statsTable);
+
+    // Win probability
+    const probBar = buildProbBar(match);
+    if (probBar) inner.appendChild(probBar);
+
+    card.appendChild(inner);
+    revealObserver.observe(card);
+    return card;
+}
+
+/* ── Main Loader ─────────────────────────────────────────────  */
+async function loadFights() {
+    const container = document.getElementById('fights-container');
+    const statusEl  = document.getElementById('statusEl');
+
+    function showError(msg) {
+        // fix: clear container before showing error
+        container.innerHTML = '';
+        const wrap = document.createElement('div');
+        wrap.className = 'status-wrap';
+        const p = document.createElement('p');
+        p.className = 'status-msg status-error';
+        setText(p, msg);
+        wrap.appendChild(p);
+        container.appendChild(wrap);
+    }
+
+    try {
+        // Check cache first
+        let data = readCache();
+
+        if (!data) {
+            const response = await fetch(DATA_URL);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            data = await response.json();
+            writeCache(data);
+        }
+
+        // Validate top-level shape
+        if (!isValidData(data)) throw new Error('Unexpected data format');
+
+        const dates = Object.keys(data);
+        if (dates.length === 0) {
+            showError('No upcoming fights scheduled.');
+            return;
+        }
+
+        const fragment = document.createDocumentFragment();
+
+        dates.forEach(dateKey => {
+            const fights = data[dateKey];
+            if (!Array.isArray(fights)) return;
+
+            // Date heading
+            const section = document.createElement('div');
+            section.className = 'date-section';
+
+            const lineL = document.createElement('div');
+            lineL.className = 'date-section-line';
+            lineL.setAttribute('aria-hidden', 'true');
+
+            const badge = document.createElement('span');
+            badge.className = 'date-section-label';
+            setText(badge, 'Event');
+
+            const dateLabel = document.createElement('span');
+            dateLabel.className = 'date-section-date';
+            setText(dateLabel, dateKey);
+
+            const lineR = document.createElement('div');
+            lineR.className = 'date-section-line';
+            lineR.setAttribute('aria-hidden', 'true');
+
+            section.appendChild(lineL);
+            section.appendChild(badge);
+            section.appendChild(dateLabel);
+            section.appendChild(lineR);
+            fragment.appendChild(section);
+
+            fights.forEach(match => {
+                const card = buildMatchCard(match);
+                if (card) fragment.appendChild(card);
             });
+        });
 
-            container.innerHTML = ''; // Clear loading state
-            container.appendChild(fragment);
+        container.innerHTML = '';   // clear loading state
+        container.appendChild(fragment);
 
-        } catch (error) {
-            status.innerHTML = `<span style="color: #ff5252;">Error syncing live data. Please try again later.</span>`;
-            console.error('System Error:', error);
-        }
+    } catch (err) {
+        console.error('Fight Night load error:', err);
+        showError('Unable to load fight data. Please try again later.');
     }
+}
 
-    /**
-     * Create individual match card element
-     */
-    function createMatchCard(match) {
-        const card = document.createElement('div');
-        card.className = 'match-card';
-
-        // Stats Generation
-        const stats = match.fighter1.stats || {};
-        const statKeys = Object.keys(stats);
-        const statsHtml = statKeys.length ? `
-            <table>
-                ${statKeys.map(key => `
-                    <tr>
-                        <td>${stats[key] || '-'}</td>
-                        <td class="stat-label">${key}</td>
-                        <td>${match.fighter2.stats[key] || '-'}</td>
-                    </tr>
-                `).join('')}
-            </table>` : '';
-
-        // Win Probability Logic
-        let scoreHtml = '';
-        const s1 = parseFloat(match.fighter1.score);
-        const s2 = parseFloat(match.fighter2.score);
-        
-        if (!isNaN(s1) && !isNaN(s2)) {
-            const total = s1 + s2;
-            const p1 = total > 0 ? (s1 / total) * 100 : 50;
-            const p2 = 100 - p1;
-
-            scoreHtml = `
-                <div class="score-container">
-                    <div style="font-size: 0.7rem; font-weight: bold; color: #888; text-align: center; margin-bottom: 5px;">WIN PROBABILITY (%)</div>
-                    <div class="score-bar-bg">
-                        <div class="score-f1" style="width: ${p1}%">${Math.round(p1)}%</div>
-                        <div class="score-f2" style="width: ${p2}%">${Math.round(p2)}%</div>
-                    </div>
-                </div>`;
-        }
-
-        card.innerHTML = `
-            <div class="header">
-                <h2>${match.match_title}</h2>
-                <span class="date-text">${match.date || ''}</span>
-                <span class="location-text">${match.location || 'Location TBD'}</span>
-            </div>
-            <div class="fighters-row">
-                <div class="fighter">
-                    <img src="${match.fighter1.icon}" loading="lazy" onerror="this.src='${FALLBACK_IMG}'">
-                    <a href="${match.fighter1.wiki}" target="_blank" rel="noopener" class="fighter-name">${match.fighter1.name}</a>
-                </div>
-                <div class="vs">VS</div>
-                <div class="fighter">
-                    <img src="${match.fighter2.icon}" loading="lazy" onerror="this.src='${FALLBACK_IMG}'">
-                    <a href="${match.fighter2.wiki}" target="_blank" rel="noopener" class="fighter-name">${match.fighter2.name}</a>
-                </div>
-            </div>
-            ${statsHtml}
-            ${scoreHtml}
-        `;
-        return card;
-    }
-
-    // Initialize
-    document.addEventListener('DOMContentLoaded', loadFights);
+document.addEventListener('DOMContentLoaded', loadFights);
 </script>
 
 </body>
