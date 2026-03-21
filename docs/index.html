@@ -5,406 +5,423 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fight Night — Match Centre</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
-
-    <noscript>
-        <style>.js-only { display: none; }</style>
-    </noscript>
-
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+    <noscript><style>.js-only{display:none}</style></noscript>
     <style>
-        /* ── Design Tokens ─────────────────────────────────── */
-        :root {
-            --bg:         #0d0d0e;
-            --surface:    #161618;
-            --surface-2:  #1e1e21;
-            --border:     rgba(255,255,255,0.07);
-            --red:        #e8001a;
-            --red-dim:    rgba(232,0,26,0.15);
-            --blue:       #006de8;
-            --blue-dim:   rgba(0,109,232,0.15);
-            --gold:       #f0b429;
-            --warn-bg:    rgba(240,163,0,0.1);
-            --warn-border:#f0a300;
-            --text:       #f0f0f0;
-            --muted:      #6b6b78;
-            --subtle:     rgba(255,255,255,0.05);
+    /* ── Tokens ──────────────────────────────────────── */
+    :root {
+        --bg:           #0c0c0d;
+        --surface:      #141416;
+        --surface-2:    #1c1c1f;
+        --surface-3:    #232328;
+        --border:       rgba(255,255,255,0.07);
+        --border-hi:    rgba(255,255,255,0.13);
+        --red:          #e8001a;
+        --blue:         #006de8;
+        --gold:         #f0b429;
+        --warn-bg:      rgba(240,163,0,0.08);
+        --warn-border:  #f0a300;
+        --text:         #f0f0f0;
+        --muted:        #5e5e6a;
+        --muted-hi:     #888894;
 
-            --font-display: 'Bebas Neue', sans-serif;
-            --font-ui:      'Barlow Condensed', sans-serif;
-            --font-body:    'DM Sans', sans-serif;
+        --sidebar-w:    248px;
 
-            --radius:   10px;
-            --radius-lg:16px;
-        }
+        --font-display: 'Bebas Neue', sans-serif;
+        --font-ui:      'Barlow Condensed', sans-serif;
+        --font-body:    'DM Sans', sans-serif;
 
-        /* ── Reset ──────────────────────────────────────────── */
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        --radius:   8px;
+        --radius-lg:14px;
+    }
 
-        /* ── Base ───────────────────────────────────────────── */
-        body {
-            font-family: var(--font-body);
-            background: var(--bg);
-            color: var(--text);
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
+    /* ── Reset ───────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
 
-        /* Grain overlay */
-        body::before {
-            content: '';
-            position: fixed;
-            inset: 0;
-            z-index: 0;
-            pointer-events: none;
-            opacity: 0.03;
-            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-            background-size: 128px 128px;
-        }
+    /* ── Base ────────────────────────────────────────── */
+    body {
+        font-family: var(--font-body);
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+        overflow-x: hidden;
+    }
+    body::before {
+        content: '';
+        position: fixed; inset: 0; z-index: 0; pointer-events: none;
+        opacity: 0.025;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+        background-size: 128px;
+    }
 
-        /* ── Layout ─────────────────────────────────────────── */
-        .page-wrap {
-            position: relative;
-            z-index: 1;
-            max-width: 860px;
-            margin: 0 auto;
-            padding: 0 20px 60px;
-        }
+    /* ── App Shell ───────────────────────────────────── */
+    .app-shell {
+        position: relative; z-index: 1;
+        display: grid;
+        grid-template-rows: auto 1fr;
+        grid-template-columns: var(--sidebar-w) 1fr;
+        grid-template-areas:
+            "header header"
+            "sidebar main";
+        min-height: 100vh;
+        max-width: 1180px;
+        margin: 0 auto;
+    }
 
-        /* ── Masthead ────────────────────────────────────────── */
-        .masthead {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 28px 0 20px;
-            border-bottom: 1px solid var(--border);
-            margin-bottom: 28px;
-        }
-        .masthead-logo {
-            font-family: var(--font-display);
-            font-size: 2.2rem;
-            letter-spacing: 0.05em;
-            color: #fff;
-            line-height: 1;
-        }
-        .masthead-logo span {
-            color: var(--red);
-        }
-        .masthead-badge {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-family: var(--font-ui);
-            font-size: 0.75rem;
-            font-weight: 600;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            color: var(--muted);
-        }
-        .live-dot {
-            width: 7px; height: 7px;
-            border-radius: 50%;
-            background: var(--red);
-            animation: pulse 1.8s ease-in-out infinite;
-        }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50%       { opacity: 0.4; transform: scale(0.7); }
-        }
+    /* ── Masthead ────────────────────────────────────── */
+    .masthead {
+        grid-area: header;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 20px 28px;
+        border-bottom: 1px solid var(--border);
+        background: rgba(12,12,13,0.9);
+        backdrop-filter: blur(12px);
+        position: sticky; top: 0; z-index: 10;
+    }
+    .masthead-logo {
+        font-family: var(--font-display);
+        font-size: 2rem;
+        letter-spacing: 0.05em;
+        color: #fff; line-height: 1;
+    }
+    .masthead-logo span { color: var(--red); }
+    .masthead-badge {
+        display: flex; align-items: center; gap: 7px;
+        font-family: var(--font-ui);
+        font-size: 0.72rem; font-weight: 600;
+        letter-spacing: 0.12em; text-transform: uppercase;
+        color: var(--muted);
+    }
+    .live-dot {
+        width: 7px; height: 7px; border-radius: 50%;
+        background: var(--red);
+        animation: pulse 1.8s ease-in-out infinite;
+    }
+    @keyframes pulse {
+        0%,100% { opacity:1; transform:scale(1); }
+        50%      { opacity:.4; transform:scale(.7); }
+    }
 
-        /* ── Betting Warning Banner ──────────────────────────── */
-        .warning-banner {
-            display: flex;
-            gap: 14px;
-            align-items: flex-start;
-            background: var(--warn-bg);
-            border: 1px solid var(--warn-border);
-            border-radius: var(--radius);
-            padding: 14px 18px;
-            margin-bottom: 32px;
-        }
-        .warning-icon {
-            flex-shrink: 0;
-            width: 22px; height: 22px;
-            margin-top: 1px;
-        }
-        .warning-text {
-            font-family: var(--font-body);
-            font-size: 0.82rem;
-            line-height: 1.55;
-            color: #d4a017;
-        }
-        .warning-text strong {
-            display: block;
-            font-size: 0.9rem;
-            margin-bottom: 3px;
-            color: var(--gold);
-            letter-spacing: 0.01em;
-        }
-        .warning-text a {
-            color: var(--gold);
-            text-underline-offset: 3px;
-        }
+    /* ── Sidebar ─────────────────────────────────────── */
+    .sidebar {
+        grid-area: sidebar;
+        display: flex;
+        flex-direction: column;
+        border-right: 1px solid var(--border);
+        background: var(--surface);
+        position: sticky;
+        top: 61px;
+        height: calc(100vh - 61px);
+        overflow: hidden;
+    }
 
-        /* ── Date Section Heading ────────────────────────────── */
-        .date-section {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            margin: 40px 0 18px;
-        }
-        .date-section-label {
-            font-family: var(--font-ui);
-            font-size: 0.7rem;
-            font-weight: 700;
-            letter-spacing: 0.18em;
-            text-transform: uppercase;
-            color: var(--muted);
-            white-space: nowrap;
-        }
-        .date-section-line {
-            flex: 1;
-            height: 1px;
-            background: var(--border);
-        }
-        .date-section-date {
-            font-family: var(--font-display);
-            font-size: 1.05rem;
-            letter-spacing: 0.08em;
-            color: var(--gold);
-            white-space: nowrap;
-        }
+    .sidebar-head {
+        padding: 18px 16px 14px;
+        border-bottom: 1px solid var(--border);
+        flex-shrink: 0;
+    }
+    .sidebar-head-title {
+        font-family: var(--font-ui);
+        font-size: 0.62rem; font-weight: 700;
+        letter-spacing: 0.18em; text-transform: uppercase;
+        color: var(--muted); margin-bottom: 2px;
+    }
+    .sidebar-head-count {
+        font-family: var(--font-display);
+        font-size: 1.7rem; letter-spacing: 0.04em;
+        color: #fff; line-height: 1.1;
+    }
+    .sidebar-head-count em { font-style: normal; color: var(--red); }
 
-        /* ── Match Card ──────────────────────────────────────── */
-        .match-card {
-            background: var(--surface);
-            border-radius: var(--radius-lg);
-            border: 1px solid var(--border);
-            margin-bottom: 20px;
-            overflow: hidden;
-            contain: content;
-            opacity: 0;
-            transform: translateY(16px);
-            transition: opacity 0.45s ease, transform 0.45s ease, border-color 0.25s;
-        }
-        .match-card.visible {
-            opacity: 1;
-            transform: translateY(0);
-        }
-        .match-card:hover {
-            border-color: rgba(255,255,255,0.14);
-        }
+    .fighter-list {
+        flex: 1;
+        overflow-y: auto; overflow-x: hidden;
+        padding: 8px 0;
+        scrollbar-width: thin;
+        scrollbar-color: var(--surface-3) transparent;
+        list-style: none;
+    }
+    .fighter-list::-webkit-scrollbar { width: 4px; }
+    .fighter-list::-webkit-scrollbar-track { background: transparent; }
+    .fighter-list::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 2px; }
 
-        /* Card top accent bar */
-        .card-accent {
-            height: 3px;
-            background: linear-gradient(90deg, var(--red) 0%, var(--blue) 100%);
-        }
+    .fighter-row {
+        display: flex; align-items: center; gap: 11px;
+        padding: 9px 16px; cursor: pointer;
+        transition: background 0.15s;
+        border-left: 2px solid transparent;
+        outline: none;
+    }
+    .fighter-row:hover { background: var(--surface-2); border-left-color: var(--red); }
+    .fighter-row.active { background: var(--surface-2); border-left-color: var(--gold); }
+    .fighter-row:focus-visible { background: var(--surface-2); border-left-color: var(--gold); }
 
-        .card-inner { padding: 24px 26px 22px; }
+    .fighter-row-avatar {
+        width: 34px; height: 34px;
+        border-radius: 50%; object-fit: cover;
+        flex-shrink: 0;
+        background: var(--surface-3);
+        border: 1px solid var(--border);
+    }
+    .fighter-row-info { min-width: 0; }
+    .fighter-row-name {
+        font-family: var(--font-ui);
+        font-size: 0.88rem; font-weight: 700;
+        letter-spacing: 0.03em; text-transform: uppercase;
+        color: #fff;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .fighter-row-event {
+        font-family: var(--font-ui);
+        font-size: 0.68rem;
+        color: var(--muted);
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        margin-top: 1px;
+    }
+    .fighter-row-badge {
+        margin-left: auto; flex-shrink: 0;
+        width: 6px; height: 6px; border-radius: 50%;
+    }
+    .fighter-row-badge--red  { background: var(--red); }
+    .fighter-row-badge--blue { background: var(--blue); }
 
-        /* Card Title & Meta */
-        .card-title {
-            font-family: var(--font-display);
-            font-size: 1.3rem;
-            letter-spacing: 0.06em;
-            text-align: center;
-            color: #fff;
-            margin-bottom: 4px;
-        }
-        .card-meta {
-            text-align: center;
-            margin-bottom: 22px;
-        }
-        .card-meta-date {
-            font-family: var(--font-ui);
-            font-size: 0.8rem;
-            font-weight: 600;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-            color: var(--gold);
-        }
-        .card-meta-location {
-            font-family: var(--font-ui);
-            font-size: 0.75rem;
-            color: var(--muted);
-            margin-top: 2px;
-        }
+    .sidebar-empty {
+        padding: 24px 16px;
+        font-family: var(--font-ui);
+        font-size: 0.8rem; letter-spacing: 0.06em;
+        color: var(--muted); text-align: center;
+        display: none;
+    }
 
-        /* Fighters Row */
-        .fighters-row {
-            display: grid;
-            grid-template-columns: 1fr auto 1fr;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 22px;
-        }
-        .fighter { text-align: center; }
-        .fighter-avatar-wrap {
-            position: relative;
-            display: inline-block;
-            margin-bottom: 10px;
-        }
-        .fighter-avatar {
-            width: 80px; height: 80px;
-            border-radius: 50%;
-            object-fit: cover;
-            display: block;
-            background: var(--surface-2);
-            border: 2px solid var(--border);
-        }
-        .fighter--red .fighter-avatar  { border-color: rgba(232,0,26,0.5); box-shadow: 0 0 14px rgba(232,0,26,0.2); }
-        .fighter--blue .fighter-avatar { border-color: rgba(0,109,232,0.5); box-shadow: 0 0 14px rgba(0,109,232,0.2); }
+    /* ── Search Bar ──────────────────────────────────── */
+    .sidebar-search {
+        flex-shrink: 0;
+        padding: 12px 14px;
+        border-top: 1px solid var(--border);
+        background: var(--surface);
+    }
+    .search-wrap {
+        display: flex; align-items: center; gap: 8px;
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 0 12px;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .search-wrap:focus-within {
+        border-color: var(--red);
+        box-shadow: 0 0 0 2px rgba(232,0,26,0.15);
+    }
+    .search-icon { width: 14px; height: 14px; flex-shrink: 0; color: var(--muted); }
+    .search-input {
+        flex: 1; background: none; border: none; outline: none;
+        font-family: var(--font-ui);
+        font-size: 0.88rem; font-weight: 600; letter-spacing: 0.04em;
+        color: var(--text); padding: 10px 0;
+        caret-color: var(--red);
+    }
+    .search-input::placeholder { color: var(--muted); }
+    .search-clear {
+        background: none; border: none; cursor: pointer;
+        color: var(--muted); padding: 4px;
+        display: none; align-items: center;
+        border-radius: 4px; transition: color 0.15s;
+    }
+    .search-clear:hover { color: var(--text); }
+    .search-clear.visible { display: flex; }
 
-        .fighter-name {
-            font-family: var(--font-ui);
-            font-size: 1rem;
-            font-weight: 700;
-            letter-spacing: 0.04em;
-            text-transform: uppercase;
-            color: #fff;
-            text-decoration: none;
-            display: block;
-            transition: color 0.2s;
-        }
-        .fighter--red  .fighter-name:hover { color: var(--red); }
-        .fighter--blue .fighter-name:hover { color: var(--blue); }
-        .fighter-name:focus-visible {
-            outline: 2px solid var(--gold);
-            outline-offset: 3px;
-            border-radius: 3px;
-        }
+    /* ── Main ────────────────────────────────────────── */
+    .main-content {
+        grid-area: main;
+        padding: 26px 28px 60px;
+        overflow-y: auto;
+    }
 
-        .vs-badge {
-            font-family: var(--font-display);
-            font-size: 1.6rem;
-            letter-spacing: 0.05em;
-            color: var(--muted);
-            padding: 0 4px;
-        }
+    /* ── Warning Banner ──────────────────────────────── */
+    .warning-banner {
+        display: flex; gap: 13px; align-items: flex-start;
+        background: var(--warn-bg);
+        border: 1px solid rgba(240,163,0,0.3);
+        border-radius: var(--radius);
+        padding: 13px 16px; margin-bottom: 28px;
+    }
+    .warning-icon { flex-shrink: 0; width: 20px; height: 20px; margin-top: 1px; }
+    .warning-text {
+        font-family: var(--font-body);
+        font-size: 0.79rem; line-height: 1.55; color: #c49010;
+    }
+    .warning-text strong {
+        display: block; font-size: 0.85rem; margin-bottom: 2px;
+        color: var(--gold); letter-spacing: 0.01em;
+    }
+    .warning-text a { color: var(--gold); text-underline-offset: 3px; }
 
-        /* Stats Table */
-        .stats-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 20px;
-        }
-        .stats-table tr { border-bottom: 1px solid var(--border); }
-        .stats-table tr:last-child { border-bottom: none; }
-        .stats-table td {
-            padding: 8px 6px;
-            font-family: var(--font-ui);
-            font-size: 0.95rem;
-            font-weight: 600;
-            width: 33%;
-        }
-        .stats-table td:first-child { color: var(--red); text-align: left; }
-        .stats-table td:last-child  { color: var(--blue); text-align: right; }
-        .stat-label {
-            text-align: center;
-            font-size: 0.62rem;
-            font-weight: 700;
-            letter-spacing: 0.14em;
-            text-transform: uppercase;
-            color: var(--muted);
-        }
+    /* ── Date Section ────────────────────────────────── */
+    .date-section {
+        display: flex; align-items: center; gap: 12px;
+        margin: 36px 0 16px;
+    }
+    .date-section:first-of-type { margin-top: 0; }
+    .date-section-line { flex: 1; height: 1px; background: var(--border); }
+    .date-section-label {
+        font-family: var(--font-ui);
+        font-size: 0.62rem; font-weight: 700;
+        letter-spacing: 0.18em; text-transform: uppercase;
+        color: var(--muted); white-space: nowrap;
+    }
+    .date-section-date {
+        font-family: var(--font-display);
+        font-size: 1rem; letter-spacing: 0.08em;
+        color: var(--gold); white-space: nowrap;
+    }
 
-        /* Win Probability */
-        .prob-section {
-            background: var(--surface-2);
-            border-radius: var(--radius);
-            padding: 14px 16px;
-        }
-        .prob-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-        .prob-label {
-            font-family: var(--font-ui);
-            font-size: 0.62rem;
-            font-weight: 700;
-            letter-spacing: 0.14em;
-            text-transform: uppercase;
-            color: var(--muted);
-        }
-        .prob-names {
-            display: flex;
-            justify-content: space-between;
-            font-family: var(--font-ui);
-            font-size: 0.72rem;
-            font-weight: 600;
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-            margin-bottom: 6px;
-        }
-        .prob-names span:first-child { color: var(--red); }
-        .prob-names span:last-child  { color: var(--blue); }
-        .prob-track {
-            height: 20px;
-            background: rgba(255,255,255,0.06);
-            border-radius: 10px;
-            display: flex;
-            overflow: hidden;
-        }
-        .prob-fill-red, .prob-fill-blue {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: var(--font-ui);
-            font-size: 0.72rem;
-            font-weight: 700;
-            transition: width 0.7s cubic-bezier(0.16, 1, 0.3, 1);
-            min-width: 32px;
-        }
-        .prob-fill-red  { background: linear-gradient(90deg, #7a0010, var(--red)); justify-content: flex-start; padding-left: 8px; }
-        .prob-fill-blue { background: linear-gradient(90deg, var(--blue), #003b7a); justify-content: flex-end; padding-right: 8px; }
+    /* ── Match Card ──────────────────────────────────── */
+    .match-card {
+        background: var(--surface);
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--border);
+        margin-bottom: 18px; overflow: hidden; contain: content;
+        opacity: 0; transform: translateY(14px);
+        transition: opacity 0.4s ease, transform 0.4s ease, border-color 0.2s, box-shadow 0.2s;
+    }
+    .match-card.visible  { opacity: 1; transform: translateY(0); }
+    .match-card:hover    { border-color: var(--border-hi); box-shadow: 0 6px 24px rgba(0,0,0,0.4); }
+    .match-card.highlighted {
+        border-color: rgba(240,180,41,0.45);
+        box-shadow: 0 0 0 1px rgba(240,180,41,0.15), 0 8px 28px rgba(0,0,0,0.5);
+    }
 
-        /* ── Status / Loading / Error ────────────────────────── */
-        .status-wrap {
-            text-align: center;
-            padding: 80px 20px;
-        }
-        .status-spinner {
-            width: 36px; height: 36px;
-            border: 3px solid var(--border);
-            border-top-color: var(--red);
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            margin: 0 auto 18px;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .status-msg {
-            font-family: var(--font-ui);
-            font-size: 0.85rem;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            color: var(--muted);
-        }
-        .status-error { color: #ff4d4d; }
+    .card-accent {
+        height: 3px;
+        background: linear-gradient(90deg, var(--red) 0%, var(--blue) 100%);
+    }
+    .card-inner { padding: 22px 24px 20px; }
 
-        /* ── Fallback SVG Avatar ─────────────────────────────── */
-        .avatar-fallback {
-            display: none;
-            width: 80px; height: 80px;
-            border-radius: 50%;
-            background: var(--surface-2);
-        }
+    .card-title {
+        font-family: var(--font-display);
+        font-size: 1.2rem; letter-spacing: 0.06em;
+        text-align: center; color: #fff; margin-bottom: 3px;
+    }
+    .card-meta { text-align: center; margin-bottom: 20px; }
+    .card-meta-date {
+        font-family: var(--font-ui);
+        font-size: 0.75rem; font-weight: 600;
+        letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold);
+    }
+    .card-meta-location {
+        font-family: var(--font-ui);
+        font-size: 0.72rem; color: var(--muted); margin-top: 2px;
+    }
 
-        /* ── Noscript ───────────────────────────────────────── */
-        noscript .noscript-msg {
-            text-align: center;
-            padding: 60px 20px;
-            font-family: var(--font-ui);
-            font-size: 1rem;
-            color: var(--muted);
-            letter-spacing: 0.06em;
+    .fighters-row {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        align-items: center; gap: 10px; margin-bottom: 20px;
+    }
+    .fighter { text-align: center; }
+    .fighter-avatar-wrap { display: inline-block; margin-bottom: 9px; }
+    .fighter-avatar {
+        width: 72px; height: 72px;
+        border-radius: 50%; object-fit: cover;
+        display: block; background: var(--surface-2);
+        border: 2px solid var(--border);
+    }
+    .fighter--red  .fighter-avatar { border-color: rgba(232,0,26,0.45); box-shadow: 0 0 14px rgba(232,0,26,0.18); }
+    .fighter--blue .fighter-avatar { border-color: rgba(0,109,232,0.45); box-shadow: 0 0 14px rgba(0,109,232,0.18); }
+
+    .fighter-name {
+        font-family: var(--font-ui);
+        font-size: 0.92rem; font-weight: 700;
+        letter-spacing: 0.04em; text-transform: uppercase;
+        color: #fff; text-decoration: none; display: block;
+        transition: color 0.2s;
+    }
+    .fighter--red  .fighter-name:hover { color: var(--red); }
+    .fighter--blue .fighter-name:hover { color: var(--blue); }
+    .fighter-name:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; border-radius: 3px; }
+
+    .vs-badge {
+        font-family: var(--font-display);
+        font-size: 1.5rem; letter-spacing: 0.05em;
+        color: var(--muted); padding: 0 4px;
+    }
+
+    .stats-table { width: 100%; border-collapse: collapse; margin-bottom: 18px; }
+    .stats-table tr { border-bottom: 1px solid var(--border); }
+    .stats-table tr:last-child { border-bottom: none; }
+    .stats-table td {
+        padding: 7px 4px; font-family: var(--font-ui);
+        font-size: 0.92rem; font-weight: 600; width: 33%;
+    }
+    .stats-table td:first-child { color: var(--red); text-align: left; }
+    .stats-table td:last-child  { color: var(--blue); text-align: right; }
+    .stat-label {
+        text-align: center; font-size: 0.6rem; font-weight: 700;
+        letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);
+    }
+
+    .prob-section { background: var(--surface-2); border-radius: var(--radius); padding: 13px 15px; }
+    .prob-label-row {
+        font-family: var(--font-ui); font-size: 0.58rem; font-weight: 700;
+        letter-spacing: 0.14em; text-transform: uppercase;
+        color: var(--muted); margin-bottom: 6px; text-align: center;
+    }
+    .prob-names {
+        display: flex; justify-content: space-between;
+        font-family: var(--font-ui); font-size: 0.7rem; font-weight: 600;
+        letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 7px;
+    }
+    .prob-names span:first-child { color: var(--red); }
+    .prob-names span:last-child  { color: var(--blue); }
+    .prob-track {
+        height: 18px; background: rgba(255,255,255,0.05);
+        border-radius: 9px; display: flex; overflow: hidden;
+    }
+    .prob-fill-red, .prob-fill-blue {
+        display: flex; align-items: center;
+        font-family: var(--font-ui); font-size: 0.68rem; font-weight: 700;
+        transition: width 0.7s cubic-bezier(0.16,1,0.3,1);
+        min-width: 30px;
+    }
+    .prob-fill-red  { background: linear-gradient(90deg,#7a0010,var(--red)); justify-content: flex-start; padding-left: 7px; }
+    .prob-fill-blue { background: linear-gradient(90deg,var(--blue),#003b7a); justify-content: flex-end; padding-right: 7px; }
+
+    /* ── Status / Loader ─────────────────────────────── */
+    .status-wrap { text-align: center; padding: 70px 20px; }
+    .status-spinner {
+        width: 32px; height: 32px;
+        border: 3px solid var(--border); border-top-color: var(--red);
+        border-radius: 50%; animation: spin 0.8s linear infinite;
+        margin: 0 auto 16px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .status-msg {
+        font-family: var(--font-ui);
+        font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted);
+    }
+    .status-error { color: #ff4d4d; }
+
+    /* ── Responsive ──────────────────────────────────── */
+    @media (max-width: 720px) {
+        .app-shell {
+            grid-template-columns: 1fr;
+            grid-template-rows: auto auto 1fr;
+            grid-template-areas: "header" "sidebar" "main";
         }
+        .sidebar {
+            position: static; height: auto; max-height: 46vh;
+            border-right: none; border-bottom: 1px solid var(--border);
+        }
+        .main-content { padding: 20px 16px 40px; }
+    }
     </style>
 </head>
 <body>
 
-<div class="page-wrap">
+<div class="app-shell">
 
     <!-- Masthead -->
     <header class="masthead">
@@ -415,91 +432,127 @@
         </div>
     </header>
 
-    <!-- ⚠️ Betting Risk Warning -->
-    <div class="warning-banner" role="alert" aria-label="Gambling risk warning">
-        <svg class="warning-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <path d="M12 2L2 20h20L12 2Z" stroke="#f0a300" stroke-width="1.8" stroke-linejoin="round"/>
-            <path d="M12 9v5" stroke="#f0a300" stroke-width="2" stroke-linecap="round"/>
-            <circle cx="12" cy="17" r="0.8" fill="#f0a300"/>
-        </svg>
-        <div class="warning-text">
-            <strong>⚠ Gambling Awareness Notice</strong>
-            Win probabilities shown here are statistical estimates only and are <em>not</em> a reliable
-            basis for betting decisions. Sports outcomes are inherently unpredictable. Gambling can be
-            addictive and cause serious financial harm. If you or someone you know has a gambling problem,
-            please seek help — visit <a href="https://www.begambleaware.org" target="_blank" rel="noopener noreferrer">BeGambleAware.org</a>
-            or call the National Gambling Helpline: <strong>0808 8020 133</strong> (UK, free, 24/7).
-            Always gamble responsibly and within your means.
-        </div>
-    </div>
+    <!-- Sidebar -->
+    <aside class="sidebar" aria-label="Fighter roster">
 
-    <!-- Main content -->
-    <main id="fights-container">
-        <div class="status-wrap" id="statusEl">
-            <div class="status-spinner" aria-hidden="true"></div>
-            <p class="status-msg">Loading match data…</p>
+        <div class="sidebar-head">
+            <div class="sidebar-head-title">On the Card</div>
+            <div class="sidebar-head-count" id="fighterCount">
+                <em>—</em> fighters
+            </div>
         </div>
+
+        <ul class="fighter-list" id="fighterList" role="list" aria-label="Fighter list"></ul>
+        <div class="sidebar-empty" id="sidebarEmpty" role="status" aria-live="polite">No fighters found</div>
+
+        <!-- Search pinned to bottom -->
+        <div class="sidebar-search" role="search" aria-label="Search fighters">
+            <div class="search-wrap">
+                <svg class="search-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                    <circle cx="8.5" cy="8.5" r="5.5" stroke="currentColor" stroke-width="1.6"/>
+                    <path d="M13 13l3.5 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                </svg>
+                <input
+                    type="search"
+                    class="search-input"
+                    id="searchInput"
+                    placeholder="Search fighters…"
+                    autocomplete="off"
+                    spellcheck="false"
+                    aria-label="Search fighters by name"
+                >
+                <button class="search-clear" id="searchClear" aria-label="Clear search">
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                        <path d="M1 1l10 10M11 1L1 11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+    </aside>
+
+    <!-- Main -->
+    <main class="main-content" id="mainContent">
+
+        <!-- Betting Warning -->
+        <div class="warning-banner" role="alert" aria-label="Gambling risk warning">
+            <svg class="warning-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M12 2L2 20h20L12 2Z" stroke="#f0a300" stroke-width="1.8" stroke-linejoin="round"/>
+                <path d="M12 9v5" stroke="#f0a300" stroke-width="2" stroke-linecap="round"/>
+                <circle cx="12" cy="17" r="0.9" fill="#f0a300"/>
+            </svg>
+            <div class="warning-text">
+                <strong>⚠ Gambling Awareness Notice</strong>
+                Win probabilities are statistical estimates only — <em>not</em> a reliable basis for betting.
+                Sports outcomes are inherently unpredictable. Gambling can be addictive and cause serious
+                financial harm. For help visit
+                <a href="https://www.begambleaware.org" target="_blank" rel="noopener noreferrer">BeGambleAware.org</a>
+                or call the free National Gambling Helpline: <strong>0808 8020 133</strong> (UK, 24/7).
+            </div>
+        </div>
+
+        <!-- Fight cards -->
+        <div id="fights-container">
+            <div class="status-wrap" id="statusEl">
+                <div class="status-spinner" aria-hidden="true"></div>
+                <p class="status-msg">Loading match data…</p>
+            </div>
+        </div>
+
     </main>
-
-    <noscript>
-        <p class="noscript-msg">JavaScript is required to display fight data.</p>
-    </noscript>
-
 </div>
+
+<noscript>
+    <div style="text-align:center;padding:60px 20px;font-family:sans-serif;color:#888;">
+        JavaScript is required to display fight data.
+    </div>
+</noscript>
 
 <script>
 "use strict";
 
-/* ── Constants ─────────────────────────────────────────────── */
-const DATA_URL      = 'https://static-conf.vercel.app/go/ufc';
-const CACHE_KEY     = 'fightnight_cache';
-const CACHE_TTL_MS  = 30 * 60 * 1000; // 30 minutes
+/* ── Constants ─────────────────────────────────────── */
+const DATA_URL  = 'https://static-conf.vercel.app/go/ufc';
+const CACHE_KEY = 'fightnight_v2';
+const CACHE_TTL = 30 * 60 * 1000;
 
-/* ── Inline SVG fallback (no third-party placeholder service) ── */
-const FALLBACK_SVG_URL = (() => {
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80">
-        <circle cx="40" cy="40" r="40" fill="#1e1e21"/>
-        <circle cx="40" cy="30" r="13" fill="#2e2e33"/>
-        <ellipse cx="40" cy="70" rx="22" ry="16" fill="#2e2e33"/>
+/* ── Inline SVG fallback avatar ─────────────────────── */
+const FALLBACK_SVG = (() => {
+    const s = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80">
+        <circle cx="40" cy="40" r="40" fill="#1c1c1f"/>
+        <circle cx="40" cy="30" r="13" fill="#2e2e34"/>
+        <ellipse cx="40" cy="70" rx="22" ry="16" fill="#2e2e34"/>
     </svg>`;
-    return 'data:image/svg+xml,' + encodeURIComponent(svg);
+    return 'data:image/svg+xml,' + encodeURIComponent(s);
 })();
 
-/* ── URL Validator — fixes href injection ──────────────────── */
+/* ── Helpers ─────────────────────────────────────────── */
+function setText(el, val) { el.textContent = String(val ?? ''); return el; }
+
 function safeUrl(raw) {
     try {
-        const url = new URL(String(raw));
-        if (url.protocol === 'https:' || url.protocol === 'http:') return url.href;
-    } catch (_) { /* fall through */ }
+        const u = new URL(String(raw));
+        if (u.protocol === 'https:' || u.protocol === 'http:') return u.href;
+    } catch (_) {}
     return null;
 }
 
-/* ── Safe DOM text setter — prevents XSS via innerHTML ─────── */
-function setText(el, value) {
-    el.textContent = String(value ?? '');
-    return el;
-}
+function safeImg(raw) { return safeUrl(raw) || FALLBACK_SVG; }
 
-/* ── Simple sessionStorage cache ─────────────────────────────  */
 function readCache() {
     try {
-        const raw = sessionStorage.getItem(CACHE_KEY);
-        if (!raw) return null;
-        const { ts, data } = JSON.parse(raw);
-        if (Date.now() - ts < CACHE_TTL_MS) return data;
-    } catch (_) { /* ignore */ }
+        const r = sessionStorage.getItem(CACHE_KEY);
+        if (!r) return null;
+        const { ts, data } = JSON.parse(r);
+        if (Date.now() - ts < CACHE_TTL) return data;
+    } catch (_) {}
     return null;
 }
-function writeCache(data) {
-    try {
-        sessionStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data }));
-    } catch (_) { /* ignore quota errors */ }
+function writeCache(d) {
+    try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data: d })); } catch (_) {}
 }
 
-/* ── API shape guard ─────────────────────────────────────────  */
-function isValidData(d) {
-    return d !== null && typeof d === 'object' && !Array.isArray(d);
-}
+function isValidData(d) { return d !== null && typeof d === 'object' && !Array.isArray(d); }
 function isValidMatch(m) {
     return m && typeof m === 'object'
         && typeof m.match_title === 'string'
@@ -507,65 +560,147 @@ function isValidMatch(m) {
         && m.fighter2 && typeof m.fighter2 === 'object';
 }
 
-/* ── Intersection Observer for card reveal ──────────────────  */
-const revealObserver = new IntersectionObserver(
-    (entries) => {
-        entries.forEach(e => {
-            if (e.isIntersecting) {
-                e.target.classList.add('visible');
-                revealObserver.unobserve(e.target);
-            }
-        });
-    },
-    { threshold: 0.08 }
-);
+/* ── Reveal observer ─────────────────────────────────── */
+const revealObs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+        if (e.isIntersecting) { e.target.classList.add('visible'); revealObs.unobserve(e.target); }
+    });
+}, { threshold: 0.06 });
 
-/* ── Build a fighter column ──────────────────────────────────  */
+/* ── App State ───────────────────────────────────────── */
+let allFighters  = [];
+let activeCardId = null;
+
+/* ── Sidebar rendering ────────────────────────────────── */
+function renderSidebar(query) {
+    const list  = document.getElementById('fighterList');
+    const empty = document.getElementById('sidebarEmpty');
+    const q     = (query || '').trim().toLowerCase();
+
+    const filtered = q
+        ? allFighters.filter(f => f.name.toLowerCase().includes(q))
+        : allFighters;
+
+    list.innerHTML = '';
+
+    if (!filtered.length) {
+        empty.style.display = 'block';
+        updateCount(0);
+        return;
+    }
+    empty.style.display = 'none';
+
+    const frag = document.createDocumentFragment();
+    filtered.forEach(f => {
+        const li = document.createElement('li');
+        li.className = 'fighter-row' + (f.cardId === activeCardId ? ' active' : '');
+        li.setAttribute('role', 'listitem');
+        li.setAttribute('tabindex', '0');
+        li.dataset.cardId = f.cardId;
+
+        const img = document.createElement('img');
+        img.className = 'fighter-row-avatar';
+        img.src     = f.icon;
+        img.alt     = f.name;
+        img.loading = 'lazy';
+        img.addEventListener('error', () => { img.src = FALLBACK_SVG; }, { once: true });
+
+        const info = document.createElement('div');
+        info.className = 'fighter-row-info';
+        const nameEl = document.createElement('div'); nameEl.className = 'fighter-row-name'; setText(nameEl, f.name);
+        const evtEl  = document.createElement('div'); evtEl.className  = 'fighter-row-event'; setText(evtEl, f.event);
+        info.appendChild(nameEl); info.appendChild(evtEl);
+
+        const badge = document.createElement('span');
+        badge.className = `fighter-row-badge fighter-row-badge--${f.side}`;
+        badge.setAttribute('aria-hidden', 'true');
+
+        li.appendChild(img); li.appendChild(info); li.appendChild(badge);
+
+        const activate = () => scrollToCard(f.cardId, li);
+        li.addEventListener('click', activate);
+        li.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(); } });
+
+        frag.appendChild(li);
+    });
+
+    list.appendChild(frag);
+    updateCount(filtered.length);
+}
+
+function updateCount(n) {
+    const el = document.getElementById('fighterCount');
+    if (!el) return;
+    el.innerHTML = '';
+    const em = document.createElement('em'); em.textContent = n;
+    el.appendChild(em);
+    el.appendChild(document.createTextNode(' fighters'));
+}
+
+function scrollToCard(cardId, rowEl) {
+    const card = document.getElementById(cardId);
+    if (!card) return;
+
+    document.querySelectorAll('.match-card.highlighted').forEach(c => c.classList.remove('highlighted'));
+    document.querySelectorAll('.fighter-row.active').forEach(r => r.classList.remove('active'));
+
+    card.classList.add('highlighted');
+    if (rowEl) rowEl.classList.add('active');
+    activeCardId = cardId;
+
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+/* ── Search wiring ────────────────────────────────────── */
+function wireSearch() {
+    const input = document.getElementById('searchInput');
+    const clear = document.getElementById('searchClear');
+
+    input.addEventListener('input', () => {
+        const q = input.value;
+        clear.classList.toggle('visible', q.length > 0);
+        renderSidebar(q);
+    });
+
+    clear.addEventListener('click', () => {
+        input.value = '';
+        clear.classList.remove('visible');
+        input.focus();
+        renderSidebar('');
+    });
+}
+
+/* ── Fighter column (inside card) ─────────────────────── */
 function buildFighter(fData, side) {
     const wrap = document.createElement('div');
     wrap.className = `fighter fighter--${side}`;
 
-    // Avatar
     const avatarWrap = document.createElement('div');
     avatarWrap.className = 'fighter-avatar-wrap';
 
     const img = document.createElement('img');
     img.className = 'fighter-avatar';
-    img.alt = fData.name ? String(fData.name) : 'Fighter';
-    img.loading = 'lazy';
-    img.decoding = 'async';
-
-    // Safe image src — fall back to inline SVG if invalid or on error
-    const imgSrc = safeUrl(fData.icon);
-    img.src = imgSrc || FALLBACK_SVG_URL;
-    img.addEventListener('error', () => { img.src = FALLBACK_SVG_URL; }, { once: true });
-
+    img.alt       = fData.name ? String(fData.name) : 'Fighter';
+    img.loading   = 'lazy'; img.decoding = 'async';
+    img.src       = safeImg(fData.icon);
+    img.addEventListener('error', () => { img.src = FALLBACK_SVG; }, { once: true });
     avatarWrap.appendChild(img);
     wrap.appendChild(avatarWrap);
 
-    // Name (link if wiki URL is valid https)
     const wikiUrl = safeUrl(fData.wiki);
-    const nameEl = wikiUrl
-        ? document.createElement('a')
-        : document.createElement('span');
-
+    const nameEl  = document.createElement(wikiUrl ? 'a' : 'span');
     nameEl.className = 'fighter-name';
     setText(nameEl, fData.name);
-
-    if (wikiUrl) {
-        nameEl.href = wikiUrl;
-        nameEl.target = '_blank';
-        nameEl.rel = 'noopener noreferrer'; // fix: includes noreferrer
-    }
+    if (wikiUrl) { nameEl.href = wikiUrl; nameEl.target = '_blank'; nameEl.rel = 'noopener noreferrer'; }
     wrap.appendChild(nameEl);
     return wrap;
 }
 
-/* ── Build stats table ───────────────────────────────────────  */
+/* ── Stats table ──────────────────────────────────────── */
 function buildStatsTable(f1, f2) {
-    const stats1 = (f1.stats && typeof f1.stats === 'object') ? f1.stats : {};
-    const stats2 = (f2.stats && typeof f2.stats === 'object') ? f2.stats : {};
-    const keys   = Object.keys(stats1);
+    const s1   = (f1.stats && typeof f1.stats === 'object') ? f1.stats : {};
+    const s2   = (f2.stats && typeof f2.stats === 'object') ? f2.stats : {};
+    const keys = Object.keys(s1);
     if (!keys.length) return null;
 
     const table = document.createElement('table');
@@ -575,26 +710,16 @@ function buildStatsTable(f1, f2) {
 
     keys.forEach(key => {
         const tr = document.createElement('tr');
-
-        const tdLeft  = document.createElement('td');
-        const tdLabel = document.createElement('td');
-        const tdRight = document.createElement('td');
-        tdLabel.className = 'stat-label';
-
-        setText(tdLeft,  stats1[key] ?? '—');
-        setText(tdLabel, key);
-        setText(tdRight, stats2[key] ?? '—'); // fix: null-checked fighter2.stats
-
-        tr.appendChild(tdLeft);
-        tr.appendChild(tdLabel);
-        tr.appendChild(tdRight);
+        const tl = document.createElement('td'); setText(tl, s1[key] ?? '—');
+        const tc = document.createElement('td'); tc.className = 'stat-label'; setText(tc, key);
+        const tr2= document.createElement('td'); setText(tr2, s2[key] ?? '—');
+        tr.appendChild(tl); tr.appendChild(tc); tr.appendChild(tr2);
         table.appendChild(tr);
     });
-
     return table;
 }
 
-/* ── Build win probability bar ───────────────────────────────  */
+/* ── Probability bar ──────────────────────────────────── */
 function buildProbBar(match) {
     const s1 = parseFloat(match.fighter1.score);
     const s2 = parseFloat(match.fighter2.score);
@@ -604,199 +729,138 @@ function buildProbBar(match) {
     const p1 = total > 0 ? Math.round((s1 / total) * 100) : 50;
     const p2 = 100 - p1;
 
-    const section = document.createElement('div');
-    section.className = 'prob-section';
-    section.setAttribute('aria-label', `Win probability: ${match.fighter1.name} ${p1}%, ${match.fighter2.name} ${p2}%`);
+    const sec = document.createElement('div');
+    sec.className = 'prob-section';
+    sec.setAttribute('aria-label', `Win probability — ${match.fighter1.name}: ${p1}%, ${match.fighter2.name}: ${p2}%`);
 
-    const names = document.createElement('div');
-    names.className = 'prob-names';
-    const nameLeft  = document.createElement('span');
-    const nameRight = document.createElement('span');
-    setText(nameLeft,  match.fighter1.name);
-    setText(nameRight, match.fighter2.name);
-    names.appendChild(nameLeft);
-    names.appendChild(nameRight);
+    const lbl = document.createElement('div'); lbl.className = 'prob-label-row'; setText(lbl, 'Win Probability');
 
-    const labelRow = document.createElement('div');
-    labelRow.className = 'prob-header';
-    const label = document.createElement('span');
-    label.className = 'prob-label';
-    setText(label, 'Win Probability');
-    labelRow.appendChild(label);
+    const names = document.createElement('div'); names.className = 'prob-names';
+    const nl = document.createElement('span'); setText(nl, match.fighter1.name);
+    const nr = document.createElement('span'); setText(nr, match.fighter2.name);
+    names.appendChild(nl); names.appendChild(nr);
 
-    const track = document.createElement('div');
-    track.className = 'prob-track';
-    track.setAttribute('role', 'img');
+    const track = document.createElement('div'); track.className = 'prob-track'; track.setAttribute('role','img');
 
-    const fillRed  = document.createElement('div');
-    const fillBlue = document.createElement('div');
-    fillRed.className  = 'prob-fill-red';
-    fillBlue.className = 'prob-fill-blue';
+    const fRed  = document.createElement('div'); fRed.className  = 'prob-fill-red';
+    const fBlue = document.createElement('div'); fBlue.className = 'prob-fill-blue';
+    fRed.style.width = fBlue.style.width = '0%';
+    setText(fRed, `${p1}%`); setText(fBlue, `${p2}%`);
+    track.appendChild(fRed); track.appendChild(fBlue);
 
-    // Start at 0, animate in after paint
-    fillRed.style.width  = '0%';
-    fillBlue.style.width = '0%';
-    setText(fillRed,  `${p1}%`);
-    setText(fillBlue, `${p2}%`);
+    sec.appendChild(lbl); sec.appendChild(names); sec.appendChild(track);
 
-    track.appendChild(fillRed);
-    track.appendChild(fillBlue);
-
-    section.appendChild(names);
-    section.appendChild(track);
-
-    // Animate after insertion via rAF
-    requestAnimationFrame(() => {
-        fillRed.style.width  = `${p1}%`;
-        fillBlue.style.width = `${p2}%`;
-    });
-
-    return section;
+    requestAnimationFrame(() => { fRed.style.width = `${p1}%`; fBlue.style.width = `${p2}%`; });
+    return sec;
 }
 
-/* ── Build one match card ─────────────────────────────────────  */
-function buildMatchCard(match) {
+/* ── Match card ───────────────────────────────────────── */
+function buildMatchCard(match, cardId) {
     if (!isValidMatch(match)) return null;
 
     const card = document.createElement('article');
-    card.className = 'match-card';
+    card.className = 'match-card'; card.id = cardId;
     card.setAttribute('aria-label', match.match_title);
 
-    // Top gradient accent bar
     const accent = document.createElement('div');
-    accent.className = 'card-accent';
-    accent.setAttribute('aria-hidden', 'true');
+    accent.className = 'card-accent'; accent.setAttribute('aria-hidden','true');
     card.appendChild(accent);
 
-    const inner = document.createElement('div');
-    inner.className = 'card-inner';
+    const inner = document.createElement('div'); inner.className = 'card-inner';
 
-    // Title
-    const title = document.createElement('h2');
-    title.className = 'card-title';
-    setText(title, match.match_title);
+    const title = document.createElement('h2'); title.className = 'card-title'; setText(title, match.match_title);
     inner.appendChild(title);
 
-    // Meta (date + location)
-    const meta = document.createElement('div');
-    meta.className = 'card-meta';
-    const metaDate = document.createElement('div');
-    metaDate.className = 'card-meta-date';
-    setText(metaDate, match.date || '');
-    const metaLoc = document.createElement('div');
-    metaLoc.className = 'card-meta-location';
-    setText(metaLoc, match.location || 'Location TBD');
-    meta.appendChild(metaDate);
-    meta.appendChild(metaLoc);
-    inner.appendChild(meta);
+    const meta = document.createElement('div'); meta.className = 'card-meta';
+    const mDate = document.createElement('div'); mDate.className = 'card-meta-date'; setText(mDate, match.date || '');
+    const mLoc  = document.createElement('div'); mLoc.className  = 'card-meta-location'; setText(mLoc, match.location || 'Location TBD');
+    meta.appendChild(mDate); meta.appendChild(mLoc); inner.appendChild(meta);
 
-    // Fighters
-    const fightersRow = document.createElement('div');
-    fightersRow.className = 'fighters-row';
-    fightersRow.appendChild(buildFighter(match.fighter1, 'red'));
+    const row = document.createElement('div'); row.className = 'fighters-row';
+    row.appendChild(buildFighter(match.fighter1, 'red'));
+    const vs = document.createElement('div'); vs.className = 'vs-badge'; vs.setAttribute('aria-label','versus'); setText(vs,'VS');
+    row.appendChild(vs);
+    row.appendChild(buildFighter(match.fighter2, 'blue'));
+    inner.appendChild(row);
 
-    const vs = document.createElement('div');
-    vs.className = 'vs-badge';
-    vs.setAttribute('aria-label', 'versus');
-    setText(vs, 'VS');
-    fightersRow.appendChild(vs);
+    const stats = buildStatsTable(match.fighter1, match.fighter2);
+    if (stats) inner.appendChild(stats);
 
-    fightersRow.appendChild(buildFighter(match.fighter2, 'blue'));
-    inner.appendChild(fightersRow);
-
-    // Stats
-    const statsTable = buildStatsTable(match.fighter1, match.fighter2);
-    if (statsTable) inner.appendChild(statsTable);
-
-    // Win probability
-    const probBar = buildProbBar(match);
-    if (probBar) inner.appendChild(probBar);
+    const prob = buildProbBar(match);
+    if (prob) inner.appendChild(prob);
 
     card.appendChild(inner);
-    revealObserver.observe(card);
+    revealObs.observe(card);
     return card;
 }
 
-/* ── Main Loader ─────────────────────────────────────────────  */
-async function loadFights() {
+/* ── Error state ──────────────────────────────────────── */
+function showError(msg) {
     const container = document.getElementById('fights-container');
-    const statusEl  = document.getElementById('statusEl');
+    container.innerHTML = '';
+    const wrap = document.createElement('div'); wrap.className = 'status-wrap';
+    const p = document.createElement('p'); p.className = 'status-msg status-error'; setText(p, msg);
+    wrap.appendChild(p); container.appendChild(wrap);
+}
 
-    function showError(msg) {
-        // fix: clear container before showing error
-        container.innerHTML = '';
-        const wrap = document.createElement('div');
-        wrap.className = 'status-wrap';
-        const p = document.createElement('p');
-        p.className = 'status-msg status-error';
-        setText(p, msg);
-        wrap.appendChild(p);
-        container.appendChild(wrap);
-    }
+/* ── Main loader ──────────────────────────────────────── */
+async function loadFights() {
+    wireSearch();
 
     try {
-        // Check cache first
         let data = readCache();
-
         if (!data) {
-            const response = await fetch(DATA_URL);
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            data = await response.json();
+            const res = await fetch(DATA_URL);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            data = await res.json();
             writeCache(data);
         }
 
-        // Validate top-level shape
         if (!isValidData(data)) throw new Error('Unexpected data format');
 
         const dates = Object.keys(data);
-        if (dates.length === 0) {
-            showError('No upcoming fights scheduled.');
-            return;
-        }
+        if (!dates.length) { showError('No upcoming fights scheduled.'); return; }
 
-        const fragment = document.createDocumentFragment();
+        const container = document.getElementById('fights-container');
+        container.innerHTML = '';
+
+        const frag = document.createDocumentFragment();
+        let cardIndex = 0;
 
         dates.forEach(dateKey => {
             const fights = data[dateKey];
             if (!Array.isArray(fights)) return;
 
             // Date heading
-            const section = document.createElement('div');
-            section.className = 'date-section';
-
-            const lineL = document.createElement('div');
-            lineL.className = 'date-section-line';
-            lineL.setAttribute('aria-hidden', 'true');
-
-            const badge = document.createElement('span');
-            badge.className = 'date-section-label';
-            setText(badge, 'Event');
-
-            const dateLabel = document.createElement('span');
-            dateLabel.className = 'date-section-date';
-            setText(dateLabel, dateKey);
-
-            const lineR = document.createElement('div');
-            lineR.className = 'date-section-line';
-            lineR.setAttribute('aria-hidden', 'true');
-
-            section.appendChild(lineL);
-            section.appendChild(badge);
-            section.appendChild(dateLabel);
-            section.appendChild(lineR);
-            fragment.appendChild(section);
+            const sec = document.createElement('div'); sec.className = 'date-section';
+            const ll  = document.createElement('div'); ll.className = 'date-section-line'; ll.setAttribute('aria-hidden','true');
+            const lbl = document.createElement('span'); lbl.className = 'date-section-label'; setText(lbl, 'Event');
+            const dl  = document.createElement('span'); dl.className = 'date-section-date'; setText(dl, dateKey);
+            const lr  = document.createElement('div'); lr.className = 'date-section-line'; lr.setAttribute('aria-hidden','true');
+            sec.appendChild(ll); sec.appendChild(lbl); sec.appendChild(dl); sec.appendChild(lr);
+            frag.appendChild(sec);
 
             fights.forEach(match => {
-                const card = buildMatchCard(match);
-                if (card) fragment.appendChild(card);
+                if (!isValidMatch(match)) return;
+
+                const cardId = `card-${cardIndex++}`;
+                const eventLabel = String(match.match_title || dateKey);
+
+                // Register both fighters for sidebar
+                allFighters.push({ name: String(match.fighter1.name || ''), event: eventLabel, side: 'red',  icon: safeImg(match.fighter1.icon), cardId });
+                allFighters.push({ name: String(match.fighter2.name || ''), event: eventLabel, side: 'blue', icon: safeImg(match.fighter2.icon), cardId });
+
+                const card = buildMatchCard(match, cardId);
+                if (card) frag.appendChild(card);
             });
         });
 
-        container.innerHTML = '';   // clear loading state
-        container.appendChild(fragment);
+        container.appendChild(frag);
+        updateCount(allFighters.length);
+        renderSidebar('');
 
     } catch (err) {
-        console.error('Fight Night load error:', err);
+        console.error('Fight Night error:', err);
         showError('Unable to load fight data. Please try again later.');
     }
 }
