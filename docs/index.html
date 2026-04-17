@@ -197,6 +197,153 @@
         display: none;
     }
 
+    /* ── Sidebar Tabs ────────────────────────────────── */
+    .sidebar-tabs {
+        display: flex;
+        border-bottom: 1px solid var(--border);
+        flex-shrink: 0;
+        background: var(--surface);
+    }
+    .sidebar-tab {
+        flex: 1;
+        background: none;
+        border: none;
+        border-bottom: 2px solid transparent;
+        padding: 10px 8px;
+        cursor: pointer;
+        font-family: var(--font-ui);
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--muted);
+        transition: color 0.15s, border-color 0.15s, background 0.15s;
+        outline: none;
+    }
+    .sidebar-tab:hover { color: var(--text); background: var(--surface-2); }
+    .sidebar-tab:focus-visible { color: var(--text); border-bottom-color: var(--gold); }
+    .sidebar-tab.active {
+        color: #fff;
+        border-bottom-color: var(--red);
+    }
+    .sidebar-tab-count {
+        display: inline-block;
+        margin-left: 4px;
+        font-size: 0.62rem;
+        color: var(--muted-hi);
+        font-weight: 600;
+    }
+    .sidebar-tab.active .sidebar-tab-count { color: var(--gold); }
+
+    /* ── Event Row (sidebar) ─────────────────────────── */
+    .event-list {
+        flex: 1;
+        overflow-y: auto; overflow-x: hidden;
+        padding: 8px 0;
+        scrollbar-width: thin;
+        scrollbar-color: var(--surface-3) transparent;
+        list-style: none;
+        display: none;
+    }
+    .event-list.active { display: block; }
+    .event-list::-webkit-scrollbar { width: 4px; }
+    .event-list::-webkit-scrollbar-track { background: transparent; }
+    .event-list::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 2px; }
+
+    .event-row {
+        display: block;
+        padding: 11px 16px;
+        cursor: pointer;
+        transition: background 0.15s;
+        border-left: 2px solid transparent;
+        outline: none;
+    }
+    .event-row:hover { background: var(--surface-2); border-left-color: var(--red); }
+    .event-row.active { background: var(--surface-2); border-left-color: var(--gold); }
+    .event-row:focus-visible { background: var(--surface-2); border-left-color: var(--gold); }
+
+    .event-row-date {
+        font-family: var(--font-display);
+        font-size: 0.98rem;
+        letter-spacing: 0.05em;
+        color: var(--gold);
+        margin-bottom: 2px;
+        line-height: 1.2;
+    }
+    .event-row-meta {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-family: var(--font-ui);
+        font-size: 0.68rem;
+        letter-spacing: 0.04em;
+        color: var(--muted);
+    }
+    .event-row-count {
+        font-weight: 700;
+        color: #fff;
+        background: var(--surface-3);
+        padding: 1px 6px;
+        border-radius: 3px;
+        font-size: 0.62rem;
+        letter-spacing: 0.08em;
+    }
+    .event-row-title {
+        font-family: var(--font-ui);
+        font-size: 0.72rem;
+        color: var(--muted-hi);
+        margin-top: 3px;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+
+    /* ── Fighter list show/hide ───────────────────────── */
+    .fighter-list { display: none; }
+    .fighter-list.active { display: block; }
+
+    /* ── Filter banner (main area) ────────────────────── */
+    .filter-banner {
+        display: none;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        background: var(--surface);
+        border: 1px solid var(--border-hi);
+        border-left: 3px solid var(--gold);
+        border-radius: var(--radius);
+        padding: 11px 14px 11px 16px;
+        margin-bottom: 22px;
+    }
+    .filter-banner.visible { display: flex; }
+    .filter-banner-text {
+        font-family: var(--font-ui);
+        font-size: 0.8rem;
+        letter-spacing: 0.04em;
+        color: var(--text);
+        min-width: 0;
+    }
+    .filter-banner-text strong {
+        color: var(--gold);
+        font-weight: 700;
+        letter-spacing: 0.06em;
+    }
+    .filter-banner-clear {
+        background: var(--surface-2);
+        border: 1px solid var(--border-hi);
+        color: var(--text);
+        font-family: var(--font-ui);
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        padding: 6px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background 0.15s, border-color 0.15s;
+        flex-shrink: 0;
+    }
+    .filter-banner-clear:hover { background: var(--surface-3); border-color: var(--red); }
+    .filter-banner-clear:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
     /* ── Search Bar ──────────────────────────────────── */
     .sidebar-search {
         flex-shrink: 0;
@@ -471,7 +618,7 @@
     </header>
 
     <!-- Sidebar -->
-    <aside class="sidebar" aria-label="Fighter roster">
+    <aside class="sidebar" aria-label="Match navigation">
 
         <div class="sidebar-head">
             <div class="sidebar-head-title">On the Card</div>
@@ -480,11 +627,32 @@
             </div>
         </div>
 
+        <!-- Tabs -->
+        <div class="sidebar-tabs" role="tablist" aria-label="Sidebar view">
+            <button
+                type="button"
+                class="sidebar-tab active"
+                id="tabEvents"
+                role="tab"
+                aria-selected="true"
+                aria-controls="eventList"
+            >Events<span class="sidebar-tab-count" id="eventsTabCount"></span></button>
+            <button
+                type="button"
+                class="sidebar-tab"
+                id="tabFighters"
+                role="tab"
+                aria-selected="false"
+                aria-controls="fighterList"
+            >Fighters<span class="sidebar-tab-count" id="fightersTabCount"></span></button>
+        </div>
+
+        <ul class="event-list active" id="eventList" role="list" aria-label="Event list"></ul>
         <ul class="fighter-list" id="fighterList" role="list" aria-label="Fighter list"></ul>
-        <div class="sidebar-empty" id="sidebarEmpty" role="status" aria-live="polite">No fighters found</div>
+        <div class="sidebar-empty" id="sidebarEmpty" role="status" aria-live="polite">No results found</div>
 
         <!-- Search pinned to bottom -->
-        <div class="sidebar-search" role="search" aria-label="Search fighters">
+        <div class="sidebar-search" role="search" aria-label="Search">
             <div class="search-wrap">
                 <svg class="search-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true">
                     <circle cx="8.5" cy="8.5" r="5.5" stroke="currentColor" stroke-width="1.6"/>
@@ -494,10 +662,10 @@
                     type="search"
                     class="search-input"
                     id="searchInput"
-                    placeholder="Search fighters…"
+                    placeholder="Search events…"
                     autocomplete="off"
                     spellcheck="false"
-                    aria-label="Search fighters by name"
+                    aria-label="Search"
                 >
                 <button class="search-clear" id="searchClear" aria-label="Clear search">
                     <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
@@ -528,6 +696,16 @@
             </div>
         </div>
 
+        <!-- Active event filter banner -->
+        <div class="filter-banner" id="filterBanner" role="status" aria-live="polite">
+            <div class="filter-banner-text">
+                Showing matches for <strong id="filterBannerDate"></strong>
+            </div>
+            <button type="button" class="filter-banner-clear" id="filterBannerClear" aria-label="Show all events">
+                Show all
+            </button>
+        </div>
+
         <!-- Fight cards -->
         <div id="fights-container">
             <div class="status-wrap" id="statusEl">
@@ -550,7 +728,7 @@
 
 /* ── Constants ─────────────────────────────────────── */
 const DATA_URL  = 'https://static-conf.vercel.app/go/ufc';
-const CACHE_KEY = 'fightnight_v2';
+const CACHE_KEY = 'fightnight_v3';
 const CACHE_TTL = 30 * 60 * 1000;
 
 /* ── Inline SVG fallback avatar ─────────────────────── */
@@ -605,12 +783,92 @@ const revealObs = new IntersectionObserver(entries => {
 }, { threshold: 0.06 });
 
 /* ── App State ───────────────────────────────────────── */
-let allFighters  = [];   // { name, event, side, icon, cardId }
-let allMatches   = [];   // { cardId, ts } — used to find the closest card to today
-let activeCardId = null;
+let allFighters    = [];   // { name, event, side, icon, cardId }
+let allEvents      = [];   // { dateKey, mainTitle, cardIds: [] }
+let allMatches     = [];   // { cardId, ts } — used to find the closest card to today
+let activeCardId   = null;
+let currentTab     = 'events';  // 'events' | 'fighters'
+let selectedEvent  = null;      // dateKey when filtering main view to one event
 
-/* ── Sidebar rendering ────────────────────────────────── */
+/* ── Sidebar rendering (router) ────────────────────────── */
 function renderSidebar(query) {
+    if (currentTab === 'events') {
+        renderEventList(query);
+    } else {
+        renderFighterList(query);
+    }
+}
+
+/* ── Event list rendering ─────────────────────────────── */
+function renderEventList(query) {
+    const list  = document.getElementById('eventList');
+    const empty = document.getElementById('sidebarEmpty');
+    const q     = (query || '').trim().toLowerCase();
+
+    const filtered = q
+        ? allEvents.filter(ev =>
+            ev.dateKey.toLowerCase().includes(q) ||
+            (ev.mainTitle && ev.mainTitle.toLowerCase().includes(q))
+          )
+        : allEvents;
+
+    list.innerHTML = '';
+
+    if (!filtered.length) {
+        empty.style.display = 'block';
+        empty.textContent = 'No events found';
+        updateCount(0);
+        return;
+    }
+    empty.style.display = 'none';
+
+    const frag = document.createDocumentFragment();
+    filtered.forEach(ev => {
+        const li = document.createElement('li');
+        li.className = 'event-row' + (ev.dateKey === selectedEvent ? ' active' : '');
+        li.setAttribute('role', 'listitem');
+        li.setAttribute('tabindex', '0');
+        li.dataset.dateKey = ev.dateKey;
+
+        const dateEl = document.createElement('div');
+        dateEl.className = 'event-row-date';
+        setText(dateEl, ev.dateKey);
+
+        const metaEl = document.createElement('div');
+        metaEl.className = 'event-row-meta';
+        const countEl = document.createElement('span');
+        countEl.className = 'event-row-count';
+        setText(countEl, ev.matchCount);
+        const labelEl = document.createElement('span');
+        setText(labelEl, ev.matchCount === 1 ? 'match' : 'matches');
+        metaEl.appendChild(countEl);
+        metaEl.appendChild(labelEl);
+
+        li.appendChild(dateEl);
+        li.appendChild(metaEl);
+
+        if (ev.mainTitle) {
+            const titleEl = document.createElement('div');
+            titleEl.className = 'event-row-title';
+            setText(titleEl, ev.mainTitle);
+            li.appendChild(titleEl);
+        }
+
+        const activate = () => selectEvent(ev.dateKey);
+        li.addEventListener('click', activate);
+        li.addEventListener('keydown', e => {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(); }
+        });
+
+        frag.appendChild(li);
+    });
+
+    list.appendChild(frag);
+    updateCount(filtered.length);
+}
+
+/* ── Fighter list rendering ───────────────────────────── */
+function renderFighterList(query) {
     const list  = document.getElementById('fighterList');
     const empty = document.getElementById('sidebarEmpty');
     const q     = (query || '').trim().toLowerCase();
@@ -623,6 +881,7 @@ function renderSidebar(query) {
 
     if (!filtered.length) {
         empty.style.display = 'block';
+        empty.textContent = 'No fighters found';
         updateCount(0);
         return;
     }
@@ -672,12 +931,101 @@ function updateCount(n) {
     el.innerHTML = '';
     const em = document.createElement('em'); em.textContent = n;
     el.appendChild(em);
-    el.appendChild(document.createTextNode(' fighters'));
+    const label = currentTab === 'events'
+        ? (n === 1 ? ' event' : ' events')
+        : (n === 1 ? ' fighter' : ' fighters');
+    el.appendChild(document.createTextNode(label));
+}
+
+function updateTabCounts() {
+    const evCount = document.getElementById('eventsTabCount');
+    const fgCount = document.getElementById('fightersTabCount');
+    if (evCount) setText(evCount, allEvents.length);
+    if (fgCount) setText(fgCount, allFighters.length);
+}
+
+/* ── Tab switching ────────────────────────────────────── */
+function switchTab(tab) {
+    if (tab !== 'events' && tab !== 'fighters') return;
+    if (currentTab === tab) return;
+
+    currentTab = tab;
+
+    // Update tab buttons
+    const tabEvents   = document.getElementById('tabEvents');
+    const tabFighters = document.getElementById('tabFighters');
+    tabEvents.classList.toggle('active', tab === 'events');
+    tabEvents.setAttribute('aria-selected', tab === 'events' ? 'true' : 'false');
+    tabFighters.classList.toggle('active', tab === 'fighters');
+    tabFighters.setAttribute('aria-selected', tab === 'fighters' ? 'true' : 'false');
+
+    // Toggle lists
+    document.getElementById('eventList').classList.toggle('active', tab === 'events');
+    document.getElementById('fighterList').classList.toggle('active', tab === 'fighters');
+
+    // Clear + refocus search, update placeholder
+    const input = document.getElementById('searchInput');
+    const clear = document.getElementById('searchClear');
+    input.value = '';
+    clear.classList.remove('visible');
+    input.placeholder = tab === 'events' ? 'Search events…' : 'Search fighters…';
+    input.setAttribute('aria-label', tab === 'events' ? 'Search events' : 'Search fighters by name');
+
+    // Hide "empty" message before re-render
+    document.getElementById('sidebarEmpty').style.display = 'none';
+
+    renderSidebar('');
+}
+
+/* ── Event filter (main area) ─────────────────────────── */
+function selectEvent(dateKey) {
+    selectedEvent = dateKey;
+
+    // Highlight the chosen row in the sidebar
+    document.querySelectorAll('.event-row').forEach(r => {
+        r.classList.toggle('active', r.dataset.dateKey === dateKey);
+    });
+
+    // Filter date sections
+    document.querySelectorAll('.date-section').forEach(sec => {
+        sec.style.display = sec.dataset.dateKey === dateKey ? '' : 'none';
+    });
+    // Filter match cards
+    document.querySelectorAll('.match-card').forEach(card => {
+        card.style.display = card.dataset.dateKey === dateKey ? '' : 'none';
+    });
+
+    // Update and show banner
+    const banner = document.getElementById('filterBanner');
+    const bannerDate = document.getElementById('filterBannerDate');
+    setText(bannerDate, dateKey);
+    banner.classList.add('visible');
+
+    // Scroll main area to top so the filtered matches are visible
+    const main = document.getElementById('mainContent');
+    if (main) main.scrollTo({ top: 0, behavior: 'smooth' });
+    else window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function clearEventFilter() {
+    selectedEvent = null;
+
+    document.querySelectorAll('.event-row.active').forEach(r => r.classList.remove('active'));
+    document.querySelectorAll('.date-section').forEach(sec => { sec.style.display = ''; });
+    document.querySelectorAll('.match-card').forEach(card => { card.style.display = ''; });
+
+    document.getElementById('filterBanner').classList.remove('visible');
 }
 
 function scrollToCard(cardId, rowEl) {
     const card = document.getElementById(cardId);
     if (!card) return;
+
+    // If an event filter is active and this card belongs to a different event,
+    // clear the filter so the card is visible before we scroll to it.
+    if (selectedEvent && card.dataset.dateKey !== selectedEvent) {
+        clearEventFilter();
+    }
 
     document.querySelectorAll('.match-card.highlighted, .match-card.nearest').forEach(c => {
         c.classList.remove('highlighted', 'nearest');
@@ -693,7 +1041,7 @@ function scrollToCard(cardId, rowEl) {
     card.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
-/* ── Search wiring ────────────────────────────────────── */
+/* ── Search + tabs + filter wiring ────────────────────── */
 function wireSearch() {
     const input = document.getElementById('searchInput');
     const clear = document.getElementById('searchClear');
@@ -710,6 +1058,13 @@ function wireSearch() {
         input.focus();
         renderSidebar('');
     });
+
+    // Tabs
+    document.getElementById('tabEvents').addEventListener('click', () => switchTab('events'));
+    document.getElementById('tabFighters').addEventListener('click', () => switchTab('fighters'));
+
+    // Clear active event filter
+    document.getElementById('filterBannerClear').addEventListener('click', clearEventFilter);
 }
 
 /* ── Fighter column (inside card) ─────────────────────── */
@@ -917,7 +1272,17 @@ async function loadFights() {
 
         if (!isValidData(data)) throw new Error('Unexpected data format');
 
-        const dates = Object.keys(data);
+        const dates = Object.keys(data).sort((a, b) => {
+            const ta = parseMatchDate(a);
+            const tb = parseMatchDate(b);
+            // Both parse → numeric descending
+            if (!isNaN(ta) && !isNaN(tb)) return tb - ta;
+            // Only one parses → put the parseable one first
+            if (!isNaN(ta)) return -1;
+            if (!isNaN(tb)) return 1;
+            // Neither parses → lexicographic descending (works for ISO YYYY-MM-DD)
+            return String(b).localeCompare(String(a));
+        });
         if (!dates.length) { showError('No upcoming fights scheduled.'); return; }
 
         const container = document.getElementById('fights-container');
@@ -932,6 +1297,7 @@ async function loadFights() {
 
             // Date heading
             const sec = document.createElement('div'); sec.className = 'date-section';
+            sec.dataset.dateKey = dateKey;
             const ll  = document.createElement('div'); ll.className = 'date-section-line'; ll.setAttribute('aria-hidden','true');
             const lbl = document.createElement('span'); lbl.className = 'date-section-label'; setText(lbl, 'Event');
             const dl  = document.createElement('span'); dl.className = 'date-section-date'; setText(dl, dateKey);
@@ -939,11 +1305,26 @@ async function loadFights() {
             sec.appendChild(ll); sec.appendChild(lbl); sec.appendChild(dl); sec.appendChild(lr);
             frag.appendChild(sec);
 
+            // Collect per-event info
+            const eventInfo = {
+                dateKey,
+                matchCount: 0,
+                mainTitle: '',
+                cardIds: []
+            };
+
             fights.forEach(match => {
                 if (!isValidMatch(match)) return;
 
                 const cardId = `card-${cardIndex++}`;
                 const eventLabel = String(match.match_title || dateKey);
+
+                // First valid match title becomes the event's headline
+                if (!eventInfo.mainTitle && match.match_title) {
+                    eventInfo.mainTitle = String(match.match_title);
+                }
+                eventInfo.matchCount += 1;
+                eventInfo.cardIds.push(cardId);
 
                 // Parse the best available date string for proximity detection
                 const dateStr = match.date || dateKey;
@@ -955,12 +1336,28 @@ async function loadFights() {
                 allFighters.push({ name: String(match.fighter2.name || ''), event: eventLabel, side: 'blue', icon: safeImg(match.fighter2.icon), cardId });
 
                 const card = buildMatchCard(match, cardId);
-                if (card) frag.appendChild(card);
+                if (card) {
+                    card.dataset.dateKey = dateKey;
+                    frag.appendChild(card);
+                }
             });
+
+            if (eventInfo.matchCount > 0) allEvents.push(eventInfo);
+        });
+
+        // Defensive: ensure the sidebar event list is always most-recent-first,
+        // even if something upstream returned dates out of order.
+        allEvents.sort((a, b) => {
+            const ta = parseMatchDate(a.dateKey);
+            const tb = parseMatchDate(b.dateKey);
+            if (!isNaN(ta) && !isNaN(tb)) return tb - ta;
+            if (!isNaN(ta)) return -1;
+            if (!isNaN(tb)) return 1;
+            return String(b.dateKey).localeCompare(String(a.dateKey));
         });
 
         container.appendChild(frag);
-        updateCount(allFighters.length);
+        updateTabCounts();
         renderSidebar('');
         autoFocusClosest();
 
