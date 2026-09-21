@@ -550,6 +550,29 @@
     .fighter--blue .fighter-name:hover { color: var(--blue); }
     .fighter-name:focus-visible { outline: 2px solid #fff; outline-offset: 3px; border-radius: 3px; }
 
+    /* Result: winner is highlighted in the accent colour; a draw highlights both, neutrally */
+    .fighter--winner .fighter-avatar {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--accent);
+    }
+    .fighter--winner .fighter-name { color: var(--accent); }
+    .fighter--draw .fighter-avatar {
+        border-color: var(--muted-hi);
+        box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--muted-hi);
+    }
+    .fighter-result {
+        display: inline-block;
+        margin-top: 8px;
+        padding: 3px 9px;
+        border-radius: 4px;
+        font-family: var(--font-ui);
+        font-size: 0.66rem; font-weight: 700;
+        letter-spacing: 0.16em; text-transform: uppercase;
+        line-height: 1.3;
+    }
+    .fighter-result--winner { color: #0c0c0d; background: var(--accent); }
+    .fighter-result--draw   { color: var(--muted-hi); background: var(--surface-2); border: 1px solid var(--border-hi); }
+
     .vs-badge {
         font-family: var(--font-ui);
         font-size: 0.62rem;
@@ -852,7 +875,7 @@
 
 /* ── Constants ─────────────────────────────────────── */
 const DATA_URL  = 'https://static-conf.vercel.app/go/ufc';
-const CACHE_KEY = 'fightnight_v3';
+const CACHE_KEY = 'fightnight_v4';
 const CACHE_TTL = 30 * 60 * 1000;
 
 /* ── Inline SVG fallback avatar ─────────────────────── */
@@ -1198,10 +1221,25 @@ function wireSearch() {
     (main || window).addEventListener('scroll', onScroll, { passive: true });
 }
 
+/* ── Fight outcome ─────────────────────────────────────── */
+// A fighter counts as a winner only when `winner` is true (boolean, or the string "true").
+// Both true → draw. Neither → no result yet (upcoming or unreported), nothing is highlighted.
+function isWinnerFlag(v) { return v === true || v === 'true'; }
+
+function getOutcome(match) {
+    const w1 = isWinnerFlag(match.fighter1.winner);
+    const w2 = isWinnerFlag(match.fighter2.winner);
+    if (w1 && w2) return 'draw';
+    if (w1) return 'fighter1';
+    if (w2) return 'fighter2';
+    return null;
+}
+
 /* ── Fighter column (inside card) ─────────────────────── */
-function buildFighter(fData, side) {
+// result: 'winner' | 'draw' | null
+function buildFighter(fData, side, result) {
     const wrap = document.createElement('div');
-    wrap.className = `fighter fighter--${side}`;
+    wrap.className = `fighter fighter--${side}` + (result ? ` fighter--${result}` : '');
 
     const avatarWrap = document.createElement('div');
     avatarWrap.className = 'fighter-avatar-wrap';
@@ -1221,6 +1259,13 @@ function buildFighter(fData, side) {
     setText(nameEl, fData.name);
     if (wikiUrl) { nameEl.href = wikiUrl; nameEl.target = '_blank'; nameEl.rel = 'noopener noreferrer'; }
     wrap.appendChild(nameEl);
+
+    if (result) {
+        const badge = document.createElement('div');
+        badge.className = `fighter-result fighter-result--${result}`;
+        setText(badge, result === 'draw' ? 'Draw' : 'Winner');
+        wrap.appendChild(badge);
+    }
     return wrap;
 }
 
@@ -1360,11 +1405,16 @@ function buildMatchCard(match, cardId) {
 
     inner.appendChild(header);
 
+    const outcome = getOutcome(match);
+    if (outcome) card.dataset.outcome = outcome;
+    const res1 = outcome === 'draw' ? 'draw' : outcome === 'fighter1' ? 'winner' : null;
+    const res2 = outcome === 'draw' ? 'draw' : outcome === 'fighter2' ? 'winner' : null;
+
     const row = document.createElement('div'); row.className = 'fighters-row';
-    row.appendChild(buildFighter(match.fighter1, 'red'));
+    row.appendChild(buildFighter(match.fighter1, 'red', res1));
     const vs = document.createElement('div'); vs.className = 'vs-badge'; vs.setAttribute('aria-label','versus'); setText(vs,'VS');
     row.appendChild(vs);
-    row.appendChild(buildFighter(match.fighter2, 'blue'));
+    row.appendChild(buildFighter(match.fighter2, 'blue', res2));
     inner.appendChild(row);
 
     const stats = buildStatsTable(match.fighter1, match.fighter2);
