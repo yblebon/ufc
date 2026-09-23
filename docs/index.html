@@ -549,6 +549,15 @@
     .fighter--red  .fighter-name:hover { color: var(--red); }
     .fighter--blue .fighter-name:hover { color: var(--blue); }
     .fighter-name:focus-visible { outline: 2px solid #fff; outline-offset: 3px; border-radius: 3px; }
+    .fighter-country {
+        margin-top: 2px;
+        font-family: var(--font-ui);
+        font-size: 0.7rem;
+        font-weight: 500;
+        letter-spacing: 0.04em;
+        color: var(--muted-hi);
+        text-transform: uppercase;
+    }
 
     /* Result: winner is highlighted in the accent colour; a draw highlights both, neutrally */
     .fighter--winner .fighter-avatar {
@@ -1259,6 +1268,13 @@ function buildFighter(fData, side, result) {
     setText(nameEl, fData.name);
     if (wikiUrl) { nameEl.href = wikiUrl; nameEl.target = '_blank'; nameEl.rel = 'noopener noreferrer'; }
     wrap.appendChild(nameEl);
+
+    if (fData.country) {
+        const countryEl = document.createElement('div');
+        countryEl.className = 'fighter-country';
+        setText(countryEl, fData.country);
+        wrap.appendChild(countryEl);
+    }
 
     if (result) {
         const badge = document.createElement('div');
