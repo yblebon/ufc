@@ -753,6 +753,119 @@
         }
         .main-content { padding: 20px 16px 40px; }
     }
+    /* ── Dashboard tab ─────────────────────────────────── */
+    #mainContent.dashboard-active > .warning-banner,
+    #mainContent.dashboard-active > .jump-bar,
+    #mainContent.dashboard-active > .filter-banner,
+    #mainContent.dashboard-active > #fights-container { display: none; }
+
+    .dashboard-view { display: none; padding: 24px 28px 60px; max-width: 900px; }
+    #mainContent.dashboard-active .dashboard-view { display: block; }
+
+    .dashboard-title {
+        font-family: var(--font-display);
+        font-size: 1.6rem; font-weight: 700; letter-spacing: 0.01em;
+        color: #fff; margin: 0 0 18px;
+    }
+
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+    .stat-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 16px 18px;
+    }
+    .stat-value {
+        font-family: var(--font-display);
+        font-size: 1.9rem; font-weight: 700; color: #fff; line-height: 1;
+    }
+    .stat-label {
+        margin-top: 6px;
+        font-family: var(--font-ui);
+        font-size: 0.68rem; font-weight: 600; letter-spacing: 0.1em;
+        text-transform: uppercase; color: var(--muted-hi);
+    }
+
+    .accuracy-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 20px 22px;
+        margin-bottom: 26px;
+    }
+    .accuracy-card-title {
+        font-family: var(--font-ui);
+        font-size: 0.72rem; font-weight: 700; letter-spacing: 0.12em;
+        text-transform: uppercase; color: var(--text);
+    }
+    .accuracy-card-sub {
+        margin-top: 2px;
+        font-family: var(--font-ui);
+        font-size: 0.7rem; color: var(--muted-hi);
+    }
+    .accuracy-figure {
+        margin-top: 14px;
+        font-family: var(--font-display);
+        font-size: 3rem; font-weight: 700; line-height: 1; color: var(--accent);
+    }
+    .accuracy-track {
+        margin-top: 14px;
+        height: 8px; border-radius: 4px;
+        background: var(--surface-3);
+        overflow: hidden;
+    }
+    .accuracy-fill {
+        height: 100%; border-radius: 4px;
+        background: var(--accent);
+        transition: width 0.5s ease;
+    }
+    .accuracy-meta {
+        margin-top: 10px;
+        font-family: var(--font-ui);
+        font-size: 0.72rem; color: var(--muted-hi);
+        letter-spacing: 0.02em;
+    }
+
+    .dashboard-section-title {
+        font-family: var(--font-ui);
+        font-size: 0.72rem; font-weight: 700; letter-spacing: 0.12em;
+        text-transform: uppercase; color: var(--muted-hi);
+        margin: 0 0 10px;
+    }
+    .missed-list { list-style: none; padding: 0; margin: 0 0 8px; }
+    .missed-row {
+        display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+        padding: 10px 14px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        margin-bottom: 8px;
+    }
+    .missed-title {
+        font-family: var(--font-ui);
+        font-size: 0.78rem; color: var(--text);
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .missed-detail {
+        flex-shrink: 0;
+        font-family: var(--font-ui);
+        font-size: 0.68rem; color: var(--muted-hi); letter-spacing: 0.02em;
+        white-space: nowrap;
+    }
+    .missed-more {
+        font-family: var(--font-ui);
+        font-size: 0.7rem; color: var(--muted); padding: 4px 14px;
+    }
+    .dashboard-empty {
+        font-family: var(--font-ui);
+        font-size: 0.8rem; color: var(--muted);
+        padding: 8px 2px;
+    }
     </style>
 </head>
 <body>
@@ -815,6 +928,14 @@
                 aria-selected="false"
                 aria-controls="fighterList"
             >Fighters<span class="sidebar-tab-count" id="fightersTabCount"></span></button>
+            <button
+                type="button"
+                class="sidebar-tab"
+                id="tabDashboard"
+                role="tab"
+                aria-selected="false"
+                aria-controls="dashboardView"
+            >Dashboard<span class="sidebar-tab-count" id="dashboardTabCount"></span></button>
         </div>
 
         <ul class="event-list active" id="eventList" role="list" aria-label="Event list"></ul>
@@ -868,6 +989,14 @@
                 <div class="status-spinner" aria-hidden="true"></div>
                 <p class="status-msg">Loading match data…</p>
             </div>
+        </div>
+
+        <!-- Dashboard -->
+        <div class="dashboard-view" id="dashboardView" role="tabpanel" aria-label="Dashboard">
+            <h2 class="dashboard-title">Dashboard</h2>
+            <div class="dashboard-grid" id="dashboardStats"></div>
+            <div class="accuracy-card" id="accuracyCard"></div>
+            <div id="missedSection"></div>
         </div>
 
     </main>
@@ -953,9 +1082,10 @@ let nearestCardId  = null;       // closest-to-today match
 function renderSidebar(query) {
     if (currentTab === 'events') {
         renderEventList(query);
-    } else {
+    } else if (currentTab === 'fighters') {
         renderFighterList(query);
     }
+    // 'dashboard' has no sidebar list — both lists stay hidden via switchTab.
 }
 
 /* ── Event list rendering ─────────────────────────────── */
@@ -1083,28 +1213,166 @@ function updateTabCounts() {
     const fgCount = document.getElementById('fightersTabCount');
     if (evCount) setText(evCount, allEvents.length);
     if (fgCount) setText(fgCount, allFighters.length);
+
+    const stats = computeDashboardStats();
+    const dbCount = document.getElementById('dashboardTabCount');
+    if (dbCount) setText(dbCount, stats.accuracyPct === null ? '' : `${stats.accuracyPct}%`);
+}
+
+/* ── Dashboard stats ───────────────────────────────────── */
+// "Predicted winner" = the fighter with the HIGHER score. A match only counts toward
+// accuracy when it has a single determined winner (not a draw, not still upcoming) AND
+// both scores are usable numbers that aren't tied — otherwise there's no favorite to grade.
+function computeDashboardStats() {
+    let completed = 0, draws = 0, decided = 0, correct = 0, noFavorite = 0, unscored = 0;
+    const missed = [];
+
+    allMatches.forEach(m => {
+        if (m.outcome === null) return; // upcoming / not yet reported
+        completed++;
+        if (m.outcome === 'draw') { draws++; return; }
+
+        if (!isFinite(m.score1) || !isFinite(m.score2)) { unscored++; return; }
+        if (m.score1 === m.score2) { noFavorite++; return; }
+
+        const favorite = m.score1 > m.score2 ? 'fighter1' : 'fighter2';
+        decided++;
+        if (favorite === m.outcome) {
+            correct++;
+        } else {
+            missed.push({
+                title: m.match_title,
+                favoriteName: favorite === 'fighter1' ? m.fighter1Name : m.fighter2Name,
+                winnerName:   m.outcome  === 'fighter1' ? m.fighter1Name : m.fighter2Name
+            });
+        }
+    });
+
+    return {
+        events: allEvents.length,
+        matches: allMatches.length,
+        fighters: allFighters.length,
+        completed, draws, decided, correct,
+        incorrect: decided - correct,
+        noFavorite, unscored,
+        accuracyPct: decided > 0 ? Math.round((correct / decided) * 100) : null,
+        missed
+    };
+}
+
+function statCard(value, label) {
+    const card = document.createElement('div'); card.className = 'stat-card';
+    const v = document.createElement('div'); v.className = 'stat-value'; setText(v, value);
+    const l = document.createElement('div'); l.className = 'stat-label'; setText(l, label);
+    card.appendChild(v); card.appendChild(l);
+    return card;
+}
+
+function renderDashboard() {
+    const stats = computeDashboardStats();
+
+    // Top stat tiles
+    const grid = document.getElementById('dashboardStats');
+    if (grid) {
+        grid.innerHTML = '';
+        grid.appendChild(statCard(stats.events, 'Events'));
+        grid.appendChild(statCard(stats.matches, 'Matches'));
+        grid.appendChild(statCard(stats.fighters, 'Fighters'));
+        grid.appendChild(statCard(stats.completed, 'Completed Fights'));
+    }
+
+    // Prediction accuracy
+    const acc = document.getElementById('accuracyCard');
+    if (acc) {
+        acc.innerHTML = '';
+
+        const head = document.createElement('div');
+        const title = document.createElement('div'); title.className = 'accuracy-card-title';
+        setText(title, 'Prediction Accuracy');
+        const sub = document.createElement('div'); sub.className = 'accuracy-card-sub';
+        setText(sub, 'Higher score treated as the predicted winner, checked against the actual result');
+        head.appendChild(title); head.appendChild(sub);
+        acc.appendChild(head);
+
+        const figure = document.createElement('div'); figure.className = 'accuracy-figure';
+        setText(figure, stats.accuracyPct === null ? '—' : `${stats.accuracyPct}%`);
+        acc.appendChild(figure);
+
+        const track = document.createElement('div'); track.className = 'accuracy-track';
+        const fill = document.createElement('div'); fill.className = 'accuracy-fill';
+        fill.style.width = `${stats.accuracyPct || 0}%`;
+        track.appendChild(fill);
+        acc.appendChild(track);
+
+        const meta = document.createElement('div'); meta.className = 'accuracy-meta';
+        const excluded = stats.draws + stats.noFavorite + stats.unscored;
+        meta.textContent = stats.decided > 0
+            ? `${stats.correct} of ${stats.decided} graded matches correctly predicted` +
+              (excluded > 0 ? ` — ${excluded} more excluded (draws, tied scores, or missing score data)` : '')
+            : 'No completed matches have both a single winner and two comparable scores yet.';
+        acc.appendChild(meta);
+    }
+
+    // Missed predictions
+    const section = document.getElementById('missedSection');
+    if (section) {
+        section.innerHTML = '';
+        if (stats.missed.length) {
+            const h = document.createElement('div'); h.className = 'dashboard-section-title';
+            setText(h, 'Missed Predictions');
+            section.appendChild(h);
+
+            const list = document.createElement('ul'); list.className = 'missed-list';
+            const CAP = 10;
+            stats.missed.slice(0, CAP).forEach(m => {
+                const li = document.createElement('li'); li.className = 'missed-row';
+                const t = document.createElement('span'); t.className = 'missed-title'; setText(t, m.title);
+                const d = document.createElement('span'); d.className = 'missed-detail';
+                setText(d, `Favored ${m.favoriteName} · Won ${m.winnerName}`);
+                li.appendChild(t); li.appendChild(d);
+                list.appendChild(li);
+            });
+            section.appendChild(list);
+
+            if (stats.missed.length > CAP) {
+                const more = document.createElement('div'); more.className = 'missed-more';
+                setText(more, `+ ${stats.missed.length - CAP} more`);
+                section.appendChild(more);
+            }
+        } else if (stats.decided > 0) {
+            const p = document.createElement('div'); p.className = 'dashboard-empty';
+            setText(p, 'The higher score picked the winner in every graded match so far.');
+            section.appendChild(p);
+        }
+    }
 }
 
 /* ── Tab switching ────────────────────────────────────── */
 function switchTab(tab) {
-    if (tab !== 'events' && tab !== 'fighters') return;
+    if (tab !== 'events' && tab !== 'fighters' && tab !== 'dashboard') return;
     if (currentTab === tab) return;
 
     currentTab = tab;
 
-    const tabEvents   = document.getElementById('tabEvents');
-    const tabFighters = document.getElementById('tabFighters');
+    const tabEvents    = document.getElementById('tabEvents');
+    const tabFighters  = document.getElementById('tabFighters');
+    const tabDashboard = document.getElementById('tabDashboard');
     tabEvents.classList.toggle('active', tab === 'events');
     tabEvents.setAttribute('aria-selected', tab === 'events' ? 'true' : 'false');
     tabFighters.classList.toggle('active', tab === 'fighters');
     tabFighters.setAttribute('aria-selected', tab === 'fighters' ? 'true' : 'false');
+    tabDashboard.classList.toggle('active', tab === 'dashboard');
+    tabDashboard.setAttribute('aria-selected', tab === 'dashboard' ? 'true' : 'false');
 
     document.getElementById('eventList').classList.toggle('active', tab === 'events');
     document.getElementById('fighterList').classList.toggle('active', tab === 'fighters');
+    document.getElementById('mainContent').classList.toggle('dashboard-active', tab === 'dashboard');
 
     // Search query PERSISTS across tab switches.
     document.getElementById('sidebarEmpty').style.display = 'none';
     renderSidebar(searchQuery);
+
+    if (tab === 'dashboard') renderDashboard();
 }
 
 /* ── Event filter (main area) ─────────────────────────── */
@@ -1210,6 +1478,7 @@ function wireSearch() {
     // Tabs
     document.getElementById('tabEvents').addEventListener('click', () => switchTab('events'));
     document.getElementById('tabFighters').addEventListener('click', () => switchTab('fighters'));
+    document.getElementById('tabDashboard').addEventListener('click', () => switchTab('dashboard'));
 
     // Clear active filters from banner
     document.getElementById('filterBannerClear').addEventListener('click', clearAllFilters);
@@ -1591,7 +1860,12 @@ async function loadFights() {
                 // Parse the best available date string for proximity detection
                 const dateStr = match.date || dateKey;
                 const ts      = parseMatchDate(dateStr);
-                allMatches.push({ cardId, ts, dateKey, match_title: String(match.match_title || '') });
+                allMatches.push({
+                    cardId, ts, dateKey, match_title: String(match.match_title || ''),
+                    score1: parseFloat(match.fighter1.score), score2: parseFloat(match.fighter2.score),
+                    outcome: getOutcome(match),
+                    fighter1Name: String(match.fighter1.name || ''), fighter2Name: String(match.fighter2.name || '')
+                });
 
                 // Register both fighters for sidebar
                 allFighters.push({ name: String(match.fighter1.name || ''), event: eventLabel, side: 'red',  icon: safeImg(match.fighter1.icon), cardId });
@@ -1623,6 +1897,7 @@ async function loadFights() {
 
         container.appendChild(frag);
         updateTabCounts();
+        renderDashboard();
         renderSidebar(searchQuery);
         autoFocusClosest();
 
