@@ -4,7 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fight Night — Match Centre</title>
+    <meta name="description" content="Live UFC fight schedules, fighter stats, and win probabilities.">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Fight Night">
+    <meta property="og:title" id="ogTitle" content="Fight Night — Match Centre">
+    <meta property="og:description" id="ogDescription" content="Live UFC fight schedules, fighter stats, and win probabilities.">
+    <meta property="og:url" id="ogUrl" content="">
+    <meta property="og:image" id="ogImage" content="">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" id="twTitle" content="Fight Night — Match Centre">
+    <meta name="twitter:description" id="twDescription" content="Live UFC fight schedules, fighter stats, and win probabilities.">
+    <meta name="twitter:image" id="twImage" content="">
     <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
     <noscript><style>.js-only{display:none}</style></noscript>
     <script defer src="https://umami-livid-five.vercel.app/script.js" data-website-id="d32068fe-681e-44f7-8a63-c6ecfb1d1cdf"></script>
@@ -504,10 +516,59 @@
         border-radius: 4px;
         white-space: nowrap;
     }
+    .card-header-chip:empty { display: none; }
     .card-header-chip--nearest {
         color: #0c0c0d;
         background: var(--accent);
         border-color: var(--accent);
+    }
+    .card-header-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+    .share-button {
+        display: flex; align-items: center; justify-content: center;
+        width: 28px; height: 28px; flex-shrink: 0;
+        background: var(--surface-2);
+        border: 1px solid var(--border-hi);
+        border-radius: 50%;
+        color: var(--muted-hi);
+        cursor: pointer;
+        transition: color 0.15s, border-color 0.15s, background 0.15s;
+    }
+    .share-button:hover { color: #fff; border-color: var(--accent); background: var(--surface-3); }
+    .share-button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .share-button.copied { color: var(--accent); border-color: var(--accent); }
+
+    /* ── Video dropdown ──────────────────────────────── */
+    .video-section { border-top: 1px solid var(--border); margin-top: 4px; }
+    .video-toggle {
+        width: 100%;
+        display: flex; align-items: center; gap: 8px;
+        background: none; border: none; cursor: pointer;
+        padding: 14px 0 2px;
+        font-family: var(--font-ui);
+        font-size: 0.6rem; font-weight: 700;
+        letter-spacing: 0.18em; text-transform: uppercase;
+        color: var(--muted);
+        transition: color 0.15s;
+    }
+    .video-toggle:hover { color: var(--text); }
+    .video-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .video-toggle::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+    .video-toggle-chevron { flex-shrink: 0; width: 12px; height: 12px; transition: transform 0.2s; }
+    .video-toggle[aria-expanded="true"] .video-toggle-chevron { transform: rotate(180deg); }
+    .video-content { display: none; padding-top: 12px; }
+    .video-content.open { display: block; }
+    .video-frame-wrap {
+        position: relative;
+        width: 100%;
+        padding-top: 56.25%; /* 16:9 */
+        background: var(--surface-3);
+        border-radius: var(--radius);
+        overflow: hidden;
+    }
+    .video-frame-wrap iframe {
+        position: absolute; inset: 0;
+        width: 100%; height: 100%;
+        border: none;
     }
 
     .fighters-row {
@@ -1039,6 +1100,25 @@ function safeUrl(raw) {
 
 function safeImg(raw) { return safeUrl(raw) || FALLBACK_SVG; }
 
+/* Accepts youtube.com/watch?v=, youtu.be/, youtube.com/embed/, youtube.com/shorts/ — returns the 11-char video id or null. */
+function extractYouTubeId(raw) {
+    const url = safeUrl(raw);
+    if (!url) return null;
+    try {
+        const u = new URL(url);
+        const host = u.hostname.replace(/^www\./, '');
+        let id = null;
+        if (host === 'youtu.be') {
+            id = u.pathname.slice(1).split('/')[0];
+        } else if (host === 'youtube.com' || host === 'm.youtube.com' || host === 'youtube-nocookie.com') {
+            if (u.pathname === '/watch') id = u.searchParams.get('v');
+            else if (u.pathname.startsWith('/embed/')) id = u.pathname.split('/')[2];
+            else if (u.pathname.startsWith('/shorts/')) id = u.pathname.split('/')[2];
+        }
+        return id && /^[\w-]{11}$/.test(id) ? id : null;
+    } catch (_) { return null; }
+}
+
 function readCache() {
     try {
         const r = sessionStorage.getItem(CACHE_KEY);
@@ -1437,6 +1517,7 @@ function selectFighter(cardId) {
     if (!card) return;
     card.classList.add('highlighted');
     activeCardId = cardId;
+    updateShareMeta(cardId);
     requestAnimationFrame(() => {
         card.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
@@ -1446,6 +1527,83 @@ function clearAllFilters() {
     selectedEvent  = null;
     selectedCardId = null;
     applyFilter();
+    resetShareMeta();
+}
+
+/* ── Per-match sharing (Open Graph / Twitter meta + deep link) ─────
+   Crawlers for most social platforms fetch raw HTML without running JS,
+   so these updates drive the browser tab/title, address bar and the
+   Web Share sheet correctly, but a pasted link's preview card still
+   reflects the default meta below unless the page is later prerendered
+   per match server-side. */
+const DEFAULT_META = {
+    title: document.title,
+    description: document.getElementById('ogDescription').content,
+    url: location.href.split('#')[0]
+};
+
+function setMeta(id, content) {
+    const el = document.getElementById(id);
+    if (el) el.setAttribute('content', content);
+}
+
+function updateShareMeta(cardId) {
+    const m = allMatches.find(x => x.cardId === cardId);
+    if (!m) return;
+
+    const title = m.match_title || `${m.fighter1Name} vs ${m.fighter2Name}`;
+    const descBits = [m.dateKey, m.location].filter(Boolean);
+    const description = descBits.length ? `${title} — ${descBits.join(' · ')}` : title;
+    const url = `${DEFAULT_META.url}#${cardId}`;
+    const image = m.icon || '';
+
+    document.title = `${title} — Fight Night`;
+    setMeta('ogTitle', title);
+    setMeta('twTitle', title);
+    setMeta('ogDescription', description);
+    setMeta('twDescription', description);
+    setMeta('ogUrl', url);
+    setMeta('ogImage', image);
+    setMeta('twImage', image);
+
+    history.replaceState(null, '', url);
+}
+
+function resetShareMeta() {
+    document.title = DEFAULT_META.title;
+    setMeta('ogTitle', DEFAULT_META.title);
+    setMeta('twTitle', DEFAULT_META.title);
+    setMeta('ogDescription', DEFAULT_META.description);
+    setMeta('twDescription', DEFAULT_META.description);
+    setMeta('ogUrl', DEFAULT_META.url);
+    setMeta('ogImage', '');
+    setMeta('twImage', '');
+    if (location.hash) history.replaceState(null, '', DEFAULT_META.url);
+}
+
+// If the page was opened via a shared #card-N link, select and scroll to that match
+// (overrides the default nearest-match jump-bar behavior).
+function applyDeepLink() {
+    const cardId = location.hash.replace(/^#/, '');
+    if (cardId && allMatches.some(m => m.cardId === cardId)) selectFighter(cardId);
+}
+
+async function shareMatch(cardId, buttonEl) {
+    updateShareMeta(cardId);
+    const m = allMatches.find(x => x.cardId === cardId);
+    const url = location.href;
+    const title = m ? (m.match_title || `${m.fighter1Name} vs ${m.fighter2Name}`) : document.title;
+
+    if (navigator.share) {
+        try { await navigator.share({ title, url }); return; } catch (_) { /* user cancelled or unsupported — fall through */ }
+    }
+    try {
+        await navigator.clipboard.writeText(url);
+        if (buttonEl) {
+            buttonEl.classList.add('copied');
+            setTimeout(() => buttonEl.classList.remove('copied'), 1500);
+        }
+    } catch (_) { /* clipboard unavailable — nothing more we can do */ }
 }
 
 function clearEventFilter() { clearAllFilters(); }
@@ -1636,6 +1794,72 @@ function buildProbBar(match) {
 }
 
 /* ── Match card ───────────────────────────────────────── */
+/* ── Share button (per match) ─────────────────────────── */
+function buildShareButton(match, cardId) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'share-button';
+    btn.setAttribute('aria-label', `Share ${match.match_title || 'this match'}`);
+    btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+        <circle cx="15" cy="4.5" r="2.5" stroke="currentColor" stroke-width="1.5"/>
+        <circle cx="5" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/>
+        <circle cx="15" cy="15.5" r="2.5" stroke="currentColor" stroke-width="1.5"/>
+        <path d="M7.2 8.8l5.6-3.3M7.2 11.2l5.6 3.3" stroke="currentColor" stroke-width="1.5"/>
+    </svg>`;
+    btn.addEventListener('click', (e) => { e.stopPropagation(); shareMatch(cardId, btn); });
+    return btn;
+}
+
+/* ── YouTube dropdown (per match) ─────────────────────── */
+function buildVideoSection(match, cardId) {
+    const videoId = extractYouTubeId(match.youtube);
+    if (!videoId) return null;
+
+    const wrap = document.createElement('div');
+    wrap.className = 'video-section';
+
+    const contentId = `${cardId}-video`;
+    const toggle = document.createElement('button');
+    toggle.type = 'button';
+    toggle.className = 'video-toggle';
+    toggle.setAttribute('aria-expanded', 'false');
+    toggle.setAttribute('aria-controls', contentId);
+    toggle.innerHTML = `<span>Watch Highlights</span>
+        <svg class="video-toggle-chevron" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+            <path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>`;
+
+    const content = document.createElement('div');
+    content.className = 'video-content';
+    content.id = contentId;
+
+    let loaded = false;
+    toggle.addEventListener('click', () => {
+        const expanded = toggle.getAttribute('aria-expanded') === 'true';
+        toggle.setAttribute('aria-expanded', String(!expanded));
+        content.classList.toggle('open', !expanded);
+
+        if (!expanded && !loaded) {
+            loaded = true;
+            const frameWrap = document.createElement('div');
+            frameWrap.className = 'video-frame-wrap';
+            const iframe = document.createElement('iframe');
+            iframe.src = `https://www.youtube-nocookie.com/embed/${videoId}`;
+            iframe.title = `${match.match_title || 'Match'} highlights`;
+            iframe.loading = 'lazy';
+            iframe.allow = 'accelerometer; encrypted-media; gyroscope; picture-in-picture; web-share';
+            iframe.referrerPolicy = 'strict-origin-when-cross-origin';
+            iframe.allowFullscreen = true;
+            frameWrap.appendChild(iframe);
+            content.appendChild(frameWrap);
+        }
+    });
+
+    wrap.appendChild(toggle);
+    wrap.appendChild(content);
+    return wrap;
+}
+
 function buildMatchCard(match, cardId) {
     if (!isValidMatch(match)) return null;
 
@@ -1682,11 +1906,16 @@ function buildMatchCard(match, cardId) {
 
     header.appendChild(headerText);
 
-    // Reserve a chip slot on the right (filled later by nearest-detection)
+    const actions = document.createElement('div');
+    actions.className = 'card-header-actions';
+
+    // Reserve a chip slot (filled later by nearest-detection); hidden while empty via CSS.
     const chip = document.createElement('div');
     chip.className = 'card-header-chip';
-    // Default empty — will be populated by autoFocusClosest() when applicable
-    header.appendChild(chip);
+    actions.appendChild(chip);
+
+    actions.appendChild(buildShareButton(match, cardId));
+    header.appendChild(actions);
 
     inner.appendChild(header);
 
@@ -1704,6 +1933,9 @@ function buildMatchCard(match, cardId) {
 
     const stats = buildStatsTable(match.fighter1, match.fighter2);
     if (stats) inner.appendChild(stats);
+
+    const video = buildVideoSection(match, cardId);
+    if (video) inner.appendChild(video);
 
     if (probResult.section) inner.appendChild(probResult.section);
 
@@ -1864,7 +2096,8 @@ async function loadFights() {
                     cardId, ts, dateKey, match_title: String(match.match_title || ''),
                     score1: parseFloat(match.fighter1.score), score2: parseFloat(match.fighter2.score),
                     outcome: getOutcome(match),
-                    fighter1Name: String(match.fighter1.name || ''), fighter2Name: String(match.fighter2.name || '')
+                    fighter1Name: String(match.fighter1.name || ''), fighter2Name: String(match.fighter2.name || ''),
+                    icon: safeUrl(match.fighter1.icon), location: match.location ? String(match.location) : ''
                 });
 
                 // Register both fighters for sidebar
@@ -1900,6 +2133,7 @@ async function loadFights() {
         renderDashboard();
         renderSidebar(searchQuery);
         autoFocusClosest();
+        applyDeepLink();
 
     } catch (err) {
         console.error('Fight Night error:', err);
