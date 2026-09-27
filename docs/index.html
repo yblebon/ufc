@@ -2072,6 +2072,10 @@ async function loadFights() {
             if (!isValidData(data)) throw new Error('Unexpected data format');
             writeCache(data);
         } else if (!isValidData(data)) {
+            // A pre-existing bad cache entry (e.g. from before this validation was
+            // added) — drop it so the next load re-fetches instead of erroring for
+            // the rest of CACHE_TTL.
+            try { sessionStorage.removeItem(CACHE_KEY); } catch (_) {}
             throw new Error('Unexpected data format');
         }
 
