@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Check inline script syntax
+        run: |
+          sed -n '/<script>/,/<\/script>/p' docs/index.html | sed '1d;$d' > /tmp/inline.js
+          node --check /tmp/inline.js
+
+      - name: Basic HTML sanity checks
+        run: |
+          node -e "
+            const fs = require('fs');
+            const html = fs.readFileSync('docs/index.html', 'utf8');
+            const open = (html.match(/<script[ >]/g) || []).length;
+            const close = (html.match(/<\/script>/g) || []).length;
+            if (open !== close) { console.error(\`Mismatched <script> tags: \${open} open, \${close} close\`); process.exit(1); }
+            if (!html.includes('<!DOCTYPE html>')) { console.error('Missing DOCTYPE'); process.exit(1); }
+            console.log('HTML sanity checks passed.');
+          "

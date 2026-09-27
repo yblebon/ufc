@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://umami-livid-five.vercel.app; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' https: data:; connect-src 'self' https://static-conf.vercel.app; frame-src https://www.youtube-nocookie.com; object-src 'none'; base-uri 'self'; form-action 'self'">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230e0e10'/%3E%3Ctext x='16' y='23' font-family='Georgia,serif' font-size='20' font-weight='700' text-anchor='middle' fill='%23f5a524'%3EF%3C/text%3E%3C/svg%3E">
     <title>Fight Night — Match Centre</title>
     <meta name="description" content="Live UFC fight schedules, fighter stats, and win probabilities.">
     <meta property="og:type" content="website">
@@ -45,7 +47,7 @@
         --warn-border:  rgba(245,165,36,0.28);
 
         --text:         #ededed;
-        --muted:        #62626a;
+        --muted:        #84848d;
         --muted-hi:     #8a8a92;
 
         --sidebar-w:    288px;
@@ -1286,8 +1288,6 @@ function renderFighterList(query) {
     list.appendChild(frag);
 }
 
-function updateCount() { /* deprecated: counter element removed */ }
-
 function updateTabCounts() {
     const evCount = document.getElementById('eventsTabCount');
     const fgCount = document.getElementById('fightersTabCount');
@@ -1783,7 +1783,8 @@ function buildProbBar(match) {
 
     names.appendChild(left); names.appendChild(right);
 
-    const track = document.createElement('div'); track.className = 'prob-track'; track.setAttribute('role','img');
+    // Purely decorative — the accessible name for this data already lives on .prob-section's aria-label.
+    const track = document.createElement('div'); track.className = 'prob-track'; track.setAttribute('aria-hidden', 'true');
     const fRed  = document.createElement('div'); fRed.className  = 'prob-fill-red';
     const fBlue = document.createElement('div'); fBlue.className = 'prob-fill-blue';
     fRed.style.width = fBlue.style.width = '0%';
