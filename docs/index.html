@@ -2066,10 +2066,18 @@ async function loadFights() {
             const res = await fetch(DATA_URL);
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             data = await res.json();
+            // Validate before caching — an invalid/malformed response must never get
+            // persisted, or a transient bad publish would keep failing for CACHE_TTL
+            // even after the source is fixed.
+            if (!isValidData(data)) throw new Error('Unexpected data format');
             writeCache(data);
+        } else if (!isValidData(data)) {
+            // A pre-existing bad cache entry (e.g. from before this validation was
+            // added) — drop it so the next load re-fetches instead of erroring for
+            // the rest of CACHE_TTL.
+            try { sessionStorage.removeItem(CACHE_KEY); } catch (_) {}
+            throw new Error('Unexpected data format');
         }
-
-        if (!isValidData(data)) throw new Error('Unexpected data format');
 
         const dates = Object.keys(data).sort((a, b) => {
             const ta = parseMatchDate(a);
