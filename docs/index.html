@@ -1547,13 +1547,45 @@ function setMeta(id, content) {
     if (el) el.setAttribute('content', content);
 }
 
+// "Age 31, Reach 66"" style summary of a fighter's stats object.
+function formatStats(stats) {
+    if (!stats || typeof stats !== 'object') return '';
+    return Object.entries(stats)
+        .filter(([, v]) => v !== null && v !== undefined && String(v).trim() !== '')
+        .map(([k, v]) => `${k} ${v}`)
+        .join(', ');
+}
+
+// Builds the share title/description: event name, both fighters, their stats,
+// and — once the match is decided — the winner called out up front.
+function buildShareCopy(m) {
+    const eventName  = m.match_title || `${m.fighter1Name} vs ${m.fighter2Name}`;
+    const winnerName = m.outcome === 'fighter1' ? m.fighter1Name : m.outcome === 'fighter2' ? m.fighter2Name : null;
+    const loserName  = m.outcome === 'fighter1' ? m.fighter2Name : m.outcome === 'fighter2' ? m.fighter1Name : null;
+
+    const title = winnerName ? `🏆 ${eventName}` : eventName;
+
+    let description = winnerName
+        ? `${eventName} — 🏆 Winner: ${winnerName} (def. ${loserName})`
+        : `${eventName} — ${m.fighter1Name} vs ${m.fighter2Name}`;
+
+    const metaBits = [m.dateKey, m.location].filter(Boolean);
+    if (metaBits.length) description += ` · ${metaBits.join(' · ')}`;
+
+    const statsBits = [
+        formatStats(m.stats1) ? `${m.fighter1Name}: ${formatStats(m.stats1)}` : '',
+        formatStats(m.stats2) ? `${m.fighter2Name}: ${formatStats(m.stats2)}` : ''
+    ].filter(Boolean);
+    if (statsBits.length) description += `. ${statsBits.join(' | ')}`;
+
+    return { title, description };
+}
+
 function updateShareMeta(cardId) {
     const m = allMatches.find(x => x.cardId === cardId);
     if (!m) return;
 
-    const title = m.match_title || `${m.fighter1Name} vs ${m.fighter2Name}`;
-    const descBits = [m.dateKey, m.location].filter(Boolean);
-    const description = descBits.length ? `${title} — ${descBits.join(' · ')}` : title;
+    const { title, description } = buildShareCopy(m);
     const url = `${DEFAULT_META.url}#${cardId}`;
     // Prefer the winner's photo once there is one; otherwise fall back to fighter 1's.
     const winnerIcon = m.outcome === 'fighter2' ? m.icon2 : m.outcome === 'fighter1' ? m.icon1 : null;
@@ -1594,7 +1626,7 @@ async function shareMatch(cardId, buttonEl) {
     updateShareMeta(cardId);
     const m = allMatches.find(x => x.cardId === cardId);
     const url = location.href;
-    const title = m ? (m.match_title || `${m.fighter1Name} vs ${m.fighter2Name}`) : document.title;
+    const title = m ? buildShareCopy(m).title : document.title;
 
     if (navigator.share) {
         try { await navigator.share({ title, url }); return; } catch (_) { /* user cancelled or unsupported — fall through */ }
@@ -2101,6 +2133,8 @@ async function loadFights() {
                     outcome: getOutcome(match),
                     fighter1Name: String(match.fighter1.name || ''), fighter2Name: String(match.fighter2.name || ''),
                     icon1: safeUrl(match.fighter1.icon), icon2: safeUrl(match.fighter2.icon),
+                    stats1: (match.fighter1.stats && typeof match.fighter1.stats === 'object') ? match.fighter1.stats : null,
+                    stats2: (match.fighter2.stats && typeof match.fighter2.stats === 'object') ? match.fighter2.stats : null,
                     location: match.location ? String(match.location) : ''
                 });
 
