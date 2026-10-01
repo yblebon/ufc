@@ -1974,10 +1974,10 @@ function buildMatchCard(match, cardId) {
     const stats = buildStatsTable(match.fighter1, match.fighter2);
     if (stats) inner.appendChild(stats);
 
+    if (probResult.section) inner.appendChild(probResult.section);
+
     const video = buildVideoSection(match, cardId);
     if (video) inner.appendChild(video);
-
-    if (probResult.section) inner.appendChild(probResult.section);
 
     card.appendChild(inner);
     revealObs.observe(card);
