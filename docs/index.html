@@ -924,6 +924,38 @@
         font-family: var(--font-ui);
         font-size: 0.7rem; color: var(--muted); padding: 4px 14px;
     }
+    .event-accuracy-list { list-style: none; padding: 0; margin: 0 0 22px; }
+    .event-accuracy-row {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        align-items: center; gap: 14px;
+        padding: 10px 14px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        margin-bottom: 8px;
+    }
+    .event-accuracy-date {
+        font-family: var(--font-display);
+        font-size: 0.95rem; font-weight: 700; color: #fff;
+        white-space: nowrap;
+    }
+    .event-accuracy-title {
+        font-family: var(--font-ui);
+        font-size: 0.74rem; color: var(--muted-hi);
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0;
+    }
+    .event-accuracy-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+    .event-accuracy-track {
+        width: 56px; height: 4px; border-radius: 2px;
+        background: var(--surface-3); overflow: hidden;
+    }
+    .event-accuracy-fill { height: 100%; background: var(--accent); }
+    .event-accuracy-pct {
+        font-family: var(--font-ui);
+        font-size: 0.74rem; font-weight: 700; color: var(--accent);
+        width: 34px; text-align: right;
+    }
     .dashboard-empty {
         font-family: var(--font-ui);
         font-size: 0.8rem; color: var(--muted);
@@ -1059,6 +1091,7 @@
             <h2 class="dashboard-title">Dashboard</h2>
             <div class="dashboard-grid" id="dashboardStats"></div>
             <div class="accuracy-card" id="accuracyCard"></div>
+            <div id="eventAccuracySection"></div>
             <div id="missedSection"></div>
         </div>
 
@@ -1340,6 +1373,33 @@ function computeDashboardStats() {
     };
 }
 
+// Per-event breakdown of the same higher-score-as-favorite grading used by
+// computeDashboardStats(), for events that have at least one gradable match.
+function computeEventAccuracy() {
+    const byDate = new Map(); // dateKey -> { decided, correct }
+    allMatches.forEach(m => {
+        if (m.outcome === null || m.outcome === 'draw') return;
+        if (!isFinite(m.score1) || !isFinite(m.score2) || m.score1 === m.score2) return;
+        const favorite = m.score1 > m.score2 ? 'fighter1' : 'fighter2';
+        const entry = byDate.get(m.dateKey) || { decided: 0, correct: 0 };
+        entry.decided++;
+        if (favorite === m.outcome) entry.correct++;
+        byDate.set(m.dateKey, entry);
+    });
+
+    return allEvents
+        .filter(ev => byDate.has(ev.dateKey))
+        .map(ev => {
+            const { decided, correct } = byDate.get(ev.dateKey);
+            return {
+                dateKey: ev.dateKey,
+                title: ev.mainTitle || (ev.matchCount === 1 ? '1 match' : `${ev.matchCount} matches`),
+                decided, correct,
+                pct: Math.round((correct / decided) * 100)
+            };
+        });
+}
+
 function statCard(value, label) {
     const card = document.createElement('div'); card.className = 'stat-card';
     const v = document.createElement('div'); v.className = 'stat-value'; setText(v, value);
@@ -1391,6 +1451,43 @@ function renderDashboard() {
               (excluded > 0 ? ` — ${excluded} more excluded (draws, tied scores, or missing score data)` : '')
             : 'No completed matches have both a single winner and two comparable scores yet.';
         acc.appendChild(meta);
+    }
+
+    // Prediction accuracy by event
+    const byEventSection = document.getElementById('eventAccuracySection');
+    if (byEventSection) {
+        byEventSection.innerHTML = '';
+        const byEvent = computeEventAccuracy();
+        if (byEvent.length) {
+            const h = document.createElement('div'); h.className = 'dashboard-section-title';
+            setText(h, 'Accuracy by Event');
+            byEventSection.appendChild(h);
+
+            const list = document.createElement('ul'); list.className = 'event-accuracy-list';
+            byEvent.forEach(ev => {
+                const li = document.createElement('li'); li.className = 'event-accuracy-row';
+
+                const dateEl = document.createElement('span'); dateEl.className = 'event-accuracy-date';
+                setText(dateEl, ev.dateKey);
+
+                const titleEl = document.createElement('span'); titleEl.className = 'event-accuracy-title';
+                setText(titleEl, ev.title);
+
+                const right = document.createElement('span'); right.className = 'event-accuracy-right';
+                const track = document.createElement('span'); track.className = 'event-accuracy-track';
+                const fill = document.createElement('span'); fill.className = 'event-accuracy-fill';
+                fill.style.width = `${ev.pct}%`;
+                track.appendChild(fill);
+                const pctEl = document.createElement('span'); pctEl.className = 'event-accuracy-pct';
+                setText(pctEl, `${ev.pct}%`);
+                right.appendChild(track); right.appendChild(pctEl);
+
+                li.setAttribute('aria-label', `${ev.title || ev.dateKey}: ${ev.correct} of ${ev.decided} correct, ${ev.pct}%`);
+                li.appendChild(dateEl); li.appendChild(titleEl); li.appendChild(right);
+                list.appendChild(li);
+            });
+            byEventSection.appendChild(list);
+        }
     }
 
     // Missed predictions
@@ -1728,11 +1825,12 @@ function buildFighter(fData, side, result) {
     avatarWrap.appendChild(img);
     wrap.appendChild(avatarWrap);
 
-    const wikiUrl = safeUrl(fData.wiki);
-    const nameEl  = document.createElement(wikiUrl ? 'a' : 'span');
+    // Prefer an explicit profile link, fall back to Wikipedia — either may be blank.
+    const profileUrl = safeUrl(fData.ufc_profile) || safeUrl(fData.wiki);
+    const nameEl  = document.createElement(profileUrl ? 'a' : 'span');
     nameEl.className = 'fighter-name';
     setText(nameEl, fData.name);
-    if (wikiUrl) { nameEl.href = wikiUrl; nameEl.target = '_blank'; nameEl.rel = 'noopener noreferrer'; }
+    if (profileUrl) { nameEl.href = profileUrl; nameEl.target = '_blank'; nameEl.rel = 'noopener noreferrer'; }
     wrap.appendChild(nameEl);
 
     if (fData.country) {
@@ -2036,6 +2134,17 @@ function autoFocusClosest() {
     }
 }
 
+// On load, land on the closest upcoming event: highlights it in the Events
+// sidebar, filters the main area to it, and scrolls it into view — same
+// effect as clicking that event row. A deep-linked match (applyDeepLink,
+// called right after this) takes precedence when present.
+function autoSelectNearestEvent() {
+    if (!nearestCardId) return;
+    const match = allMatches.find(m => m.cardId === nearestCardId);
+    if (!match) return;
+    selectEvent(match.dateKey);
+}
+
 function jumpToNearest() {
     if (!nearestCardId) return;
     selectFighter(nearestCardId);
@@ -2137,9 +2246,12 @@ async function loadFights() {
                 eventInfo.matchCount += 1;
                 eventInfo.cardIds.push(cardId);
 
-                // Parse the best available date string for proximity detection
-                const dateStr = match.date || dateKey;
-                const ts      = parseMatchDate(dateStr);
+                // Use dateKey (always a clean YYYY-MM-DD) for proximity/sort math —
+                // match.date is a free-form display string from the source data and
+                // can omit the year entirely (e.g. "Sat, Oct 3, 7:00 PM CDT"), which
+                // native Date.parse silently resolves to the year 2001, making an
+                // upcoming match look decades in the past.
+                const ts = parseMatchDate(dateKey);
                 allMatches.push({
                     cardId, ts, dateKey, match_title: String(match.match_title || ''),
                     score1: parseFloat(match.fighter1.score), score2: parseFloat(match.fighter2.score),
@@ -2184,7 +2296,8 @@ async function loadFights() {
         renderDashboard();
         renderSidebar(searchQuery);
         autoFocusClosest();
-        applyDeepLink();
+        autoSelectNearestEvent();
+        applyDeepLink(); // a shared #card-N link, if present, overrides the auto-selected event
 
     } catch (err) {
         console.error('Fight Night error:', err);
