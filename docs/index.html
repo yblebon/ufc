@@ -196,12 +196,20 @@
         white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         margin-top: 1px;
     }
-    .fighter-row-badge {
+    .fighter-row-count {
         margin-left: auto; flex-shrink: 0;
-        width: 6px; height: 6px; border-radius: 50%;
+        font-family: var(--font-ui);
+        font-weight: 700;
+        color: var(--muted-hi);
+        font-size: 0.7rem;
+        letter-spacing: 0.06em;
+        background: var(--surface-3);
+        border-radius: 10px;
+        padding: 2px 7px;
+        min-width: 1.6em;
+        text-align: center;
     }
-    .fighter-row-badge--red  { background: var(--red); }
-    .fighter-row-badge--blue { background: var(--blue); }
+    .fighter-row.active .fighter-row-count { color: var(--accent); }
 
     .sidebar-empty {
         padding: 24px 16px;
@@ -248,6 +256,32 @@
         font-weight: 600;
     }
     .sidebar-tab.active .sidebar-tab-count { color: var(--accent); }
+
+    /* ── Fighter sort toggle ───────────────────────────── */
+    .fighter-sort-bar {
+        display: none;
+        padding: 8px 14px;
+        border-bottom: 1px solid var(--border);
+        background: var(--surface);
+        flex-shrink: 0;
+    }
+    .fighter-sort-bar.active { display: block; }
+    .fighter-sort-toggle {
+        display: inline-flex; align-items: center; gap: 6px;
+        background: var(--surface-2);
+        border: 1px solid var(--border-hi);
+        color: var(--muted-hi);
+        font-family: var(--font-ui);
+        font-size: 0.68rem; font-weight: 700;
+        letter-spacing: 0.08em; text-transform: uppercase;
+        padding: 5px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: color 0.15s, border-color 0.15s, background 0.15s;
+    }
+    .fighter-sort-toggle:hover { color: #fff; background: var(--surface-3); }
+    .fighter-sort-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .fighter-sort-toggle[aria-pressed="true"] { color: #0c0c0d; background: var(--accent); border-color: var(--accent); }
 
     /* ── Event Row (sidebar) ─────────────────────────── */
     .event-list {
@@ -1033,6 +1067,15 @@
             >Dashboard<span class="sidebar-tab-count" id="dashboardTabCount"></span></button>
         </div>
 
+        <div class="fighter-sort-bar" id="fighterSortBar">
+            <button type="button" class="fighter-sort-toggle" id="fighterSortToggle" aria-pressed="false">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                    <path d="M2.5 3.5h7M2.5 6h5M2.5 8.5h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+                </svg>
+                <span id="fighterSortLabel">Sort: Recent</span>
+            </button>
+        </div>
+
         <ul class="event-list active" id="eventList" role="list" aria-label="Event list"></ul>
         <ul class="fighter-list" id="fighterList" role="list" aria-label="Fighter list"></ul>
         <div class="sidebar-empty" id="sidebarEmpty" role="status" aria-live="polite">No results found</div>
@@ -1183,15 +1226,16 @@ const revealObs = new IntersectionObserver(entries => {
 }, { threshold: 0.06 });
 
 /* ── App State ───────────────────────────────────────── */
-let allFighters    = [];   // { name, event, side, icon, cardId }
-let allEvents      = [];   // { dateKey, mainTitle, cardIds: [] }
-let allMatches     = [];   // { cardId, ts, dateKey, match_title }
-let activeCardId   = null;
-let currentTab     = 'events';
-let selectedEvent  = null;       // dateKey filter
-let selectedCardId = null;       // single-card filter
-let searchQuery    = '';         // shared across tab switches
-let nearestCardId  = null;       // closest-to-today match
+let fighterDirectory = [];   // deduped by name: { name, icon, cardId (primary), matchCount }
+let allEvents        = [];   // { dateKey, mainTitle, cardIds: [] }
+let allMatches       = [];   // { cardId, ts, dateKey, match_title }
+let activeCardId     = null;
+let currentTab       = 'events';
+let selectedEvent    = null;       // dateKey filter
+let selectedCardId   = null;       // single-card filter
+let searchQuery      = '';         // shared across tab switches
+let nearestCardId    = null;       // closest-to-today match
+let fighterSortMode  = 'recent';   // 'recent' (appearance order) | 'name' (A–Z)
 
 /* ── Sidebar rendering (router) ────────────────────────── */
 function renderSidebar(query) {
@@ -1269,9 +1313,13 @@ function renderFighterList(query) {
     const empty = document.getElementById('sidebarEmpty');
     const q     = (query || '').trim().toLowerCase();
 
-    const filtered = q
-        ? allFighters.filter(f => f.name.toLowerCase().includes(q))
-        : allFighters;
+    let filtered = q
+        ? fighterDirectory.filter(f => f.name.toLowerCase().includes(q))
+        : fighterDirectory.slice();
+
+    if (fighterSortMode === 'name') {
+        filtered.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+    }
 
     list.innerHTML = '';
 
@@ -1302,14 +1350,16 @@ function renderFighterList(query) {
         const info = document.createElement('div');
         info.className = 'fighter-row-info';
         const nameEl = document.createElement('div'); nameEl.className = 'fighter-row-name'; setText(nameEl, f.name);
-        const evtEl  = document.createElement('div'); evtEl.className  = 'fighter-row-event'; setText(evtEl, f.event);
-        info.appendChild(nameEl); info.appendChild(evtEl);
+        const cntEl  = document.createElement('div'); cntEl.className  = 'fighter-row-event';
+        setText(cntEl, f.matchCount === 1 ? '1 match' : `${f.matchCount} matches`);
+        info.appendChild(nameEl); info.appendChild(cntEl);
 
-        const badge = document.createElement('span');
-        badge.className = `fighter-row-badge fighter-row-badge--${f.side}`;
-        badge.setAttribute('aria-hidden', 'true');
+        const countBadge = document.createElement('span');
+        countBadge.className = 'fighter-row-count';
+        setText(countBadge, f.matchCount);
+        countBadge.setAttribute('aria-hidden', 'true');
 
-        li.appendChild(img); li.appendChild(info); li.appendChild(badge);
+        li.appendChild(img); li.appendChild(info); li.appendChild(countBadge);
 
         const activate = () => selectFighter(f.cardId, li);
         li.addEventListener('click', activate);
@@ -1325,7 +1375,7 @@ function updateTabCounts() {
     const evCount = document.getElementById('eventsTabCount');
     const fgCount = document.getElementById('fightersTabCount');
     if (evCount) setText(evCount, allEvents.length);
-    if (fgCount) setText(fgCount, allFighters.length);
+    if (fgCount) setText(fgCount, fighterDirectory.length);
 
     const stats = computeDashboardStats();
     const dbCount = document.getElementById('dashboardTabCount');
@@ -1364,7 +1414,7 @@ function computeDashboardStats() {
     return {
         events: allEvents.length,
         matches: allMatches.length,
-        fighters: allFighters.length,
+        fighters: fighterDirectory.length,
         completed, draws, decided, correct,
         incorrect: decided - correct,
         noFavorite, unscored,
@@ -1543,6 +1593,7 @@ function switchTab(tab) {
 
     document.getElementById('eventList').classList.toggle('active', tab === 'events');
     document.getElementById('fighterList').classList.toggle('active', tab === 'fighters');
+    document.getElementById('fighterSortBar').classList.toggle('active', tab === 'fighters');
     document.getElementById('mainContent').classList.toggle('dashboard-active', tab === 'dashboard');
 
     // Search query PERSISTS across tab switches.
@@ -1773,6 +1824,18 @@ function wireSearch() {
     document.getElementById('tabEvents').addEventListener('click', () => switchTab('events'));
     document.getElementById('tabFighters').addEventListener('click', () => switchTab('fighters'));
     document.getElementById('tabDashboard').addEventListener('click', () => switchTab('dashboard'));
+
+    // Fighter sort toggle (Recent appearance order <-> A–Z)
+    const sortToggle = document.getElementById('fighterSortToggle');
+    const sortLabel  = document.getElementById('fighterSortLabel');
+    if (sortToggle) {
+        sortToggle.addEventListener('click', () => {
+            fighterSortMode = fighterSortMode === 'name' ? 'recent' : 'name';
+            sortToggle.setAttribute('aria-pressed', fighterSortMode === 'name' ? 'true' : 'false');
+            setText(sortLabel, fighterSortMode === 'name' ? 'Sort: A–Z' : 'Sort: Recent');
+            renderSidebar(searchQuery);
+        });
+    }
 
     // Clear active filters from banner
     document.getElementById('filterBannerClear').addEventListener('click', clearAllFilters);
@@ -2090,12 +2153,16 @@ function parseMatchDate(dateStr) {
     return isNaN(ts) ? NaN : ts;
 }
 
-function findClosestCardId() {
-    if (!allMatches.length) return null;
-    // "Today" anchored to local midnight so a match scheduled today still counts as upcoming.
+// "Today" anchored to local midnight so a match scheduled today still counts as upcoming.
+function todayCutoff() {
     const startOfToday = new Date();
     startOfToday.setHours(0, 0, 0, 0);
-    const cutoff = startOfToday.getTime();
+    return startOfToday.getTime();
+}
+
+function findClosestCardId() {
+    if (!allMatches.length) return null;
+    const cutoff = todayCutoff();
 
     let soonest = null;
     let minDelta = Infinity;
@@ -2106,6 +2173,20 @@ function findClosestCardId() {
         if (delta < minDelta) { minDelta = delta; soonest = cardId; }
     });
     return soonest;
+}
+
+// Among a fighter's matches, prefer the soonest upcoming one; fall back to the
+// most recent past one; fall back to the first appearance if dates don't parse.
+function pickPrimaryCardId(appearances) {
+    const cutoff = todayCutoff();
+    let bestUpcoming = null, bestUpcomingTs = Infinity;
+    let bestPast = null, bestPastTs = -Infinity;
+    appearances.forEach(({ cardId, ts }) => {
+        if (isNaN(ts)) return;
+        if (ts >= cutoff) { if (ts < bestUpcomingTs) { bestUpcomingTs = ts; bestUpcoming = cardId; } }
+        else { if (ts > bestPastTs) { bestPastTs = ts; bestPast = cardId; } }
+    });
+    return bestUpcoming || bestPast || (appearances[0] && appearances[0].cardId) || null;
 }
 
 function autoFocusClosest() {
@@ -2211,6 +2292,18 @@ async function loadFights() {
 
         const frag = document.createDocumentFragment();
         let cardIndex = 0;
+        const fighterByName = new Map(); // name -> { name, icon, appearances: [{cardId, ts}] }
+
+        function registerFighter(name, icon, cardId, ts) {
+            name = String(name || '');
+            if (!name) return;
+            let entry = fighterByName.get(name);
+            if (!entry) {
+                entry = { name, icon, appearances: [] };
+                fighterByName.set(name, entry);
+            }
+            entry.appearances.push({ cardId, ts });
+        }
 
         dates.forEach(dateKey => {
             const fights = data[dateKey];
@@ -2237,7 +2330,6 @@ async function loadFights() {
                 if (!isValidMatch(match)) return;
 
                 const cardId = `card-${cardIndex++}`;
-                const eventLabel = String(match.match_title || dateKey);
 
                 // First valid match title becomes the event's headline
                 if (!eventInfo.mainTitle && match.match_title) {
@@ -2263,9 +2355,9 @@ async function loadFights() {
                     location: match.location ? String(match.location) : ''
                 });
 
-                // Register both fighters for sidebar
-                allFighters.push({ name: String(match.fighter1.name || ''), event: eventLabel, side: 'red',  icon: safeImg(match.fighter1.icon), cardId });
-                allFighters.push({ name: String(match.fighter2.name || ''), event: eventLabel, side: 'blue', icon: safeImg(match.fighter2.icon), cardId });
+                // Register both fighters in the deduplicated directory
+                registerFighter(match.fighter1.name, safeImg(match.fighter1.icon), cardId, ts);
+                registerFighter(match.fighter2.name, safeImg(match.fighter2.icon), cardId, ts);
 
                 const card = buildMatchCard(match, cardId);
                 if (card) {
@@ -2278,6 +2370,17 @@ async function loadFights() {
                 allEvents.push(eventInfo);
                 setText(cnt, eventInfo.matchCount === 1 ? '1 match' : eventInfo.matchCount + ' matches');
             }
+        });
+
+        // Build the deduplicated fighter directory now that every appearance (and
+        // its match timestamp) has been collected. Insertion order here follows
+        // first-appearance order, which is what fighterSortMode 'recent' uses.
+        fighterByName.forEach(({ name, icon, appearances }) => {
+            fighterDirectory.push({
+                name, icon,
+                matchCount: appearances.length,
+                cardId: pickPrimaryCardId(appearances)
+            });
         });
 
         // Defensive: ensure the sidebar event list is always most-recent-first,
