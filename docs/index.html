@@ -479,6 +479,56 @@
         color: var(--muted-hi);
     }
 
+    /* ── Division grouping ──────────────────────────────── */
+    .division-jump-bar {
+        display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+        margin: -8px 0 22px;
+    }
+    .division-jump-label {
+        font-family: var(--font-ui);
+        font-size: 0.64rem; font-weight: 700;
+        letter-spacing: 0.14em; text-transform: uppercase;
+        color: var(--muted); margin-right: 2px;
+    }
+    .division-jump-pill {
+        background: var(--surface-2);
+        border: 1px solid var(--border-hi);
+        color: var(--muted-hi);
+        font-family: var(--font-ui);
+        font-size: 0.68rem; font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 5px 11px;
+        border-radius: 999px;
+        cursor: pointer;
+        transition: color 0.15s, border-color 0.15s, background 0.15s;
+    }
+    .division-jump-pill:hover { color: #fff; border-color: var(--accent); background: var(--surface-3); }
+    .division-jump-pill:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+    .division-header {
+        display: flex; align-items: baseline; gap: 10px;
+        margin: 30px 0 14px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid var(--border);
+        scroll-margin-top: calc(var(--header-h) + 16px);
+        border-radius: 4px;
+        transition: background 0.4s ease;
+    }
+    .division-header:first-of-type { margin-top: 10px; }
+    .division-header-name {
+        font-family: var(--font-ui);
+        font-size: 0.82rem; font-weight: 700;
+        letter-spacing: 0.08em; text-transform: uppercase;
+        color: #fff;
+    }
+    .division-header-count {
+        font-family: var(--font-ui);
+        font-size: 0.66rem; font-weight: 600;
+        letter-spacing: 0.1em; text-transform: uppercase;
+        color: var(--muted);
+    }
+    .division-header.division-focus { background: var(--accent-soft); }
+
     /* ── Match Card ──────────────────────────────────── */
     .match-card {
         background: var(--surface);
@@ -836,7 +886,9 @@
     .jump-bar-button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 
     .date-section[data-hidden="true"],
-    .match-card[data-hidden="true"] { display: none !important; }
+    .match-card[data-hidden="true"],
+    .division-jump-bar[data-hidden="true"],
+    .division-header[data-hidden="true"] { display: none !important; }
 
     @media (max-width: 720px) {
         .app-shell {
@@ -1167,6 +1219,18 @@ const FALLBACK_SVG = (() => {
 
 /* ── Helpers ─────────────────────────────────────────── */
 function setText(el, val) { el.textContent = String(val ?? ''); return el; }
+
+function slugify(s) {
+    return String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'x';
+}
+
+function scrollToDivision(targetId) {
+    const el = document.getElementById(targetId);
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    el.classList.add('division-focus');
+    setTimeout(() => el.classList.remove('division-focus'), 1500);
+}
 
 function safeUrl(raw) {
     try {
@@ -1616,6 +1680,10 @@ function applyFilter() {
         const anyVisible = Array.from(document.querySelectorAll(`.match-card[data-date-key="${dk}"]`))
             .some(c => c.dataset.hidden !== 'true');
         sec.dataset.hidden = anyVisible ? 'false' : 'true';
+        // The division jump bar/headers belong to the event as a whole, not to
+        // any one match, so they follow the date-section's own visibility.
+        document.querySelectorAll(`.division-jump-bar[data-date-key="${dk}"], .division-header[data-date-key="${dk}"]`)
+            .forEach(el => { el.dataset.hidden = sec.dataset.hidden; });
     });
 
     document.querySelectorAll('.event-row').forEach(r => {
@@ -2326,6 +2394,43 @@ async function loadFights() {
                 cardIds: []
             };
 
+            // Fights sharing a division are scattered through the source array
+            // (main-card and prelim bouts of the same weight class aren't
+            // adjacent), so group them by first-occurrence order of `division`
+            // — this also puts the headline fight's division first, since it's
+            // always fights[0]. Only engage grouping when there are at least
+            // two distinct divisions; older events with no `division` field at
+            // all render exactly as before.
+            const divisionOrder  = [];        // ordered distinct division labels (null = unlabeled)
+            const divisionBuffer = new Map(); // label -> array of card elements
+            fights.forEach(match => {
+                if (!isValidMatch(match)) return;
+                const label = (match.division && String(match.division).trim()) || null;
+                if (!divisionBuffer.has(label)) { divisionOrder.push(label); divisionBuffer.set(label, []); }
+            });
+            const grouped = divisionOrder.filter(d => d !== null).length >= 2;
+
+            if (grouped) {
+                const jumpBar = document.createElement('div');
+                jumpBar.className = 'division-jump-bar';
+                jumpBar.dataset.dateKey = dateKey;
+                jumpBar.setAttribute('aria-label', 'Jump to division');
+                const jumpLbl = document.createElement('span'); jumpLbl.className = 'division-jump-label';
+                setText(jumpLbl, 'Divisions');
+                jumpBar.appendChild(jumpLbl);
+                divisionOrder.forEach(label => {
+                    if (label === null) return;
+                    const pill = document.createElement('button');
+                    pill.type = 'button';
+                    pill.className = 'division-jump-pill';
+                    pill.dataset.target = `div-${dateKey}-${slugify(label)}`;
+                    setText(pill, label);
+                    pill.addEventListener('click', () => scrollToDivision(pill.dataset.target));
+                    jumpBar.appendChild(pill);
+                });
+                frag.appendChild(jumpBar);
+            }
+
             fights.forEach(match => {
                 if (!isValidMatch(match)) return;
 
@@ -2352,7 +2457,9 @@ async function loadFights() {
                     icon1: safeUrl(match.fighter1.icon), icon2: safeUrl(match.fighter2.icon),
                     stats1: (match.fighter1.stats && typeof match.fighter1.stats === 'object') ? match.fighter1.stats : null,
                     stats2: (match.fighter2.stats && typeof match.fighter2.stats === 'object') ? match.fighter2.stats : null,
-                    location: match.location ? String(match.location) : ''
+                    location: match.location ? String(match.location) : '',
+                    division: (match.division && String(match.division).trim()) || null,
+                    mainCard: match.main_card === true
                 });
 
                 // Register both fighters in the deduplicated directory
@@ -2362,9 +2469,34 @@ async function loadFights() {
                 const card = buildMatchCard(match, cardId);
                 if (card) {
                     card.dataset.dateKey = dateKey;
-                    frag.appendChild(card);
+                    if (grouped) {
+                        const label = (match.division && String(match.division).trim()) || null;
+                        divisionBuffer.get(label).push(card);
+                    } else {
+                        frag.appendChild(card);
+                    }
                 }
             });
+
+            if (grouped) {
+                divisionOrder.forEach(label => {
+                    const cards = divisionBuffer.get(label);
+                    if (!cards.length) return;
+                    if (label !== null) {
+                        const header = document.createElement('div');
+                        header.className = 'division-header';
+                        header.dataset.dateKey = dateKey;
+                        header.id = `div-${dateKey}-${slugify(label)}`;
+                        const hName = document.createElement('span'); hName.className = 'division-header-name';
+                        setText(hName, label);
+                        const hCount = document.createElement('span'); hCount.className = 'division-header-count';
+                        setText(hCount, cards.length === 1 ? '1 fight' : `${cards.length} fights`);
+                        header.appendChild(hName); header.appendChild(hCount);
+                        frag.appendChild(header);
+                    }
+                    cards.forEach(c => frag.appendChild(c));
+                });
+            }
 
             if (eventInfo.matchCount > 0) {
                 allEvents.push(eventInfo);
